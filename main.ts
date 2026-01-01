@@ -4,7 +4,7 @@ import { FolderSuggest } from 'autocomplete'
 interface LogosPluginSettings {
 	bibFolder: string;
 	citationCounters: Record<string, number>;
-	useBookTitleAsCallout: boolean;
+	customCalloutTitle: string;
 	appendReferencesToTitle: boolean;
 	addNewLineBeforeLink: boolean;
 	autoDetectBibleVerses: boolean;
@@ -13,7 +13,7 @@ interface LogosPluginSettings {
 const DEFAULT_SETTINGS: LogosPluginSettings = {
 	bibFolder: '', // default to vault root
 	citationCounters: {},
-	useBookTitleAsCallout: false,
+	customCalloutTitle: '',
 	appendReferencesToTitle: false,
 	addNewLineBeforeLink: false,
 	autoDetectBibleVerses: false,
@@ -47,6 +47,9 @@ export default class LogosReferencePlugin extends Plugin {
 				if (this.settings.appendReferencesToTitle && bookTitle) {
 					noteName = `${bookTitle} - References`;
 				}
+				// Strip special characters from note name
+				noteName = noteName.replace(/[\\/:]/g, '');
+
 				const filePath = folder ? `${folder}/${noteName}.md` : `${noteName}.md`;
 
 				// Auto-detect Bible verses and link them to Logos if enabled
@@ -69,9 +72,7 @@ export default class LogosReferencePlugin extends Plugin {
 				await this.saveSettings();
 
 				// Determine callout title based on settings
-				const calloutTitle = this.settings.useBookTitleAsCallout && bookTitle
-					? bookTitle
-					: 'Logos Ref';
+				const calloutTitle = this.settings.customCalloutTitle || 'Logos Ref';
 
 				const quotedText = [
 					`> [!${calloutTitle}]`,
@@ -414,13 +415,14 @@ class LogosPluginSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(this.containerEl)
-			.setName("Use book title as callout")
-			.setDesc("When enabled, the callout title will be the book's title instead of \"Logos Ref\"")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.useBookTitleAsCallout)
+			.setName("Callout title")
+			.setDesc("The title for the callout block (default is \"Logos Ref\")")
+			.addText((text) =>
+				text
+					.setPlaceholder("Example: Logos Ref")
+					.setValue(this.plugin.settings.customCalloutTitle)
 					.onChange(async (value) => {
-						this.plugin.settings.useBookTitleAsCallout = value;
+						this.plugin.settings.customCalloutTitle = value;
 						await this.plugin.saveSettings();
 					})
 			);
