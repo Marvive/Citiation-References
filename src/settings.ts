@@ -3,7 +3,7 @@
  */
 
 import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
-import { FolderSuggest } from './autocomplete';
+import { FolderSuggestEngine } from './ui/folder-suggest';
 import { LogosPluginSettings } from './types';
 
 interface PluginWithSettings extends Plugin {
@@ -28,7 +28,7 @@ export class LogosPluginSettingTab extends PluginSettingTab {
             .setName("BibTeX note folder")
             .setDesc("Folder to save BibTeX reference notes")
             .addSearch((text) => {
-                new FolderSuggest(this.app, text.inputEl);
+                new FolderSuggestEngine(this.app, text.inputEl);
                 text.setPlaceholder("Example: folder1/folder2")
                     .setValue(this.plugin.settings.bibFolder)
                     .onChange(async (new_folder) => {

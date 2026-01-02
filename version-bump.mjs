@@ -1,14 +1,37 @@
+/**
+ * Logos References - Version Bumping Utility
+ * Maintained by Michael Marvive
+ */
+
 import { readFileSync, writeFileSync } from "fs";
 
 const targetVersion = process.env.npm_package_version;
 
-// read minAppVersion from manifest.json and bump version to target version
-let manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
-const { minAppVersion } = manifest;
-manifest.version = targetVersion;
-writeFileSync("manifest.json", JSON.stringify(manifest, null, "\t"));
+if (!targetVersion) {
+    console.error("No target version found. Run via 'npm version <patch|minor|major>'.");
+    process.exit(1);
+}
 
-// update versions.json with target version and minAppVersion from manifest.json
-let versions = JSON.parse(readFileSync("versions.json", "utf8"));
-versions[targetVersion] = minAppVersion;
-writeFileSync("versions.json", JSON.stringify(versions, null, "\t"));
+const updateJsonFile = (filePath, callback) => {
+    try {
+        const content = JSON.parse(readFileSync(filePath, "utf8"));
+        const updatedContent = callback(content);
+        writeFileSync(filePath, JSON.stringify(updatedContent, null, "\t") + "\n");
+        console.log(`Updated version in ${filePath} to ${targetVersion}`);
+    } catch (error) {
+        console.error(`Failed to update ${filePath}:`, error.message);
+    }
+};
+
+// Update manifest.json
+updateJsonFile("manifest.json", (manifest) => {
+    const { minAppVersion } = manifest;
+    return { ...manifest, version: targetVersion };
+});
+
+// Update versions.json
+updateJsonFile("versions.json", (versions) => {
+    const manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
+    const { minAppVersion } = manifest;
+    return { ...versions, [targetVersion]: minAppVersion };
+});
