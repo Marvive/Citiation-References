@@ -30,12 +30,12 @@ Copy a passage from logos and utilize the paste command within **Logos Reference
 Based on the original work by [Joey Kilgore](https://github.com/joey-kilgore). This version represents a complete overhaul and expansion of the original plugin's capabilities.
 
 ## Development
-Maintained by **Michael Marvive**. All bugs and feature requests should be filed under the [Issues](https://github.com/MichaelMarvive/logos-references/issues).
+Maintained by **Michael Marvive**. All bugs and feature requests should be filed under the [Issues](https://github.com/Marvive/logos-references/issues).
 
 ---
 
 > For those who want to show their appreciation for project development. 👍
 >
 > - 👉 `Star` the Project
-> - ☕️ **Buy me a coffee** @[Github Sponsor](https://github.com/sponsors/michaelmarvive)
-> - ❤️ Provide Feedback in [`Issues`](https://github.com/MichaelMarvive/logos-references/issues)
+> - ☕️ **Buy me a coffee** @[Github Sponsor](https://github.com/sponsors/Marvive) <iframe src="https://github.com/sponsors/Marvive/button" title="Sponsor Marvive" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
+> - ❤️ Provide Feedback in [`Issues`](https://github.com/Marvive/logos-references/issues)
