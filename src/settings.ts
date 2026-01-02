@@ -136,16 +136,17 @@ export class LogosPluginSettingTab extends PluginSettingTab {
                         .setDisabled(false);
 
                     addFieldInput = text.inputEl;
-                    addFieldInput.onkeypress = async (e: KeyboardEvent) => {
+                    addFieldInput.addEventListener('keydown', (e: KeyboardEvent) => {
                         if (e.key === 'Enter' && addFieldInput.value.trim()) {
                             const newField = addFieldInput.value.trim();
                             if (!this.plugin.settings.customMetadataFields.includes(newField)) {
                                 this.plugin.settings.customMetadataFields.push(newField);
-                                await this.plugin.saveSettings();
-                                this.display();
+                                void this.plugin.saveSettings().then(() => {
+                                    this.display();
+                                });
                             }
                         }
-                    };
+                    });
                 })
                 .addButton((button) => {
                     button.setButtonText("Add")
