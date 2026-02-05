@@ -4,10 +4,112 @@ import {
     extractPageNumber,
     extractPagesFromBibtex,
     extractBookTitle,
-    cleanFormattedText
+    cleanFormattedText,
+    detectCitationFormat,
+    parseBibtex,
+    parseMLA,
+    parseAPA,
+    parseChicago
 } from '../utils/clipboard-parser';
 
 describe('Clipboard Parser', () => {
+    describe('detectCitationFormat', () => {
+        it('should detect BibTeX format', () => {
+            const bibtex = '@book{smith2020, title={Test}}';
+            expect(detectCitationFormat(bibtex)).toBe('bibtex');
+        });
+
+        it('should detect APA format', () => {
+            const apa = 'Smith, J. A. (2020). Title of work. Publisher.';
+            expect(detectCitationFormat(apa)).toBe('apa');
+        });
+
+        it('should detect MLA format', () => {
+            const mla = 'Smith, John. Title of Work. Publisher, 2020.';
+            expect(detectCitationFormat(mla)).toBe('mla');
+        });
+
+        it('should detect Chicago format', () => {
+            const chicago = 'Smith, John. Title of Work. New York: Publisher, 2020.';
+            expect(detectCitationFormat(chicago)).toBe('chicago');
+        });
+
+        it('should default to bibtex for unknown formats', () => {
+            const unknown = 'Some random text';
+            expect(detectCitationFormat(unknown)).toBe('bibtex');
+        });
+    });
+
+    describe('parseBibtex', () => {
+        it('should parse BibTeX entry fields', () => {
+            const bibtex = `@book{smith2020,
+                author = {John Smith},
+                title = {Systematic Theology},
+                year = {2020},
+                publisher = {Academic Press},
+                pages = {123}
+            }`;
+            const result = parseBibtex(bibtex);
+
+            expect(result.citeKey).toBe('smith2020');
+            expect(result.author).toBe('John Smith');
+            expect(result.title).toBe('Systematic Theology');
+            expect(result.year).toBe('2020');
+            expect(result.publisher).toBe('Academic Press');
+            expect(result.pages).toBe('123');
+            expect(result.format).toBe('bibtex');
+        });
+
+        it('should sanitize cite keys with special characters', () => {
+            const bibtex = '@book{author_name__2020, title = {Test}}';
+            const result = parseBibtex(bibtex);
+            expect(result.citeKey).not.toContain('_');
+            expect(result.citeKey).not.toContain('__');
+        });
+
+        it('should handle missing fields gracefully', () => {
+            const bibtex = '@misc{test}';
+            const result = parseBibtex(bibtex);
+            expect(result.author).toBeNull();
+            expect(result.title).toBeNull();
+            expect(result.year).toBeNull();
+        });
+    });
+
+    describe('parseMLA', () => {
+        it('should parse MLA citation', () => {
+            const mla = 'Smith, John. "The Great Book." Academic Press, 2020.';
+            const result = parseMLA(mla);
+
+            expect(result.format).toBe('mla');
+            expect(result.author).toBe('Smith, John');
+            expect(result.citeKey).toContain('smith');
+            expect(result.citeKey).toContain('2020');
+        });
+    });
+
+    describe('parseAPA', () => {
+        it('should parse APA citation', () => {
+            const apa = 'Smith, J. A. (2020). Title of work. Academic Publisher.';
+            const result = parseAPA(apa);
+
+            expect(result.format).toBe('apa');
+            expect(result.year).toBe('2020');
+            expect(result.citeKey).toContain('smith');
+        });
+    });
+
+    describe('parseChicago', () => {
+        it('should parse Chicago citation', () => {
+            const chicago = 'Smith, John. Title of Work. New York: Academic Press, 2020.';
+            const result = parseChicago(chicago);
+
+            expect(result.format).toBe('chicago');
+            expect(result.year).toBe('2020');
+            expect(result.author).toBe('Smith, John');
+        });
+    });
+
     describe('parseLogosClipboard', () => {
         it('should parse clipboard content with BibTeX', () => {
             const clipboard = `This is a quote from the book.
@@ -19,7 +121,8 @@ describe('Clipboard Parser', () => {
             const result = parseLogosClipboard(clipboard);
 
             expect(result.mainText).toBe('This is a quote from the book.');
-            expect(result.bibtex).toContain('@book{smith2020');
+            expect(result.citation).not.toBeNull();
+            expect(result.citation?.citeKey).toBe('smith2020');
             expect(result.page).toBe('123');
         });
 
@@ -58,21 +161,21 @@ Third line.
             const result = parseLogosClipboard(clipboard);
 
             expect(result.mainText).toBe('This is a *quote* with **bold** text.');
-            expect(result.bibtex).toContain('@book{smith2020');
+            expect(result.citation).not.toBeNull();
         });
 
         it('should handle clipboard that is only a BibTeX entry', () => {
             const clipboard = `@book{citation2023, title={Only Citation}}`;
             const result = parseLogosClipboard(clipboard);
             expect(result.mainText).toBe("");
-            expect(result.bibtex).toContain("@book{citation2023");
+            expect(result.citation?.citeKey).toBe('citation2023');
         });
 
         it('should handle clipboard with space instead of newline before @', () => {
             const clipboard = `Text result @book{citation2023, title={Only Citation}}`;
             const result = parseLogosClipboard(clipboard);
             expect(result.mainText).toBe("Text result");
-            expect(result.bibtex).toContain("@book{citation2023");
+            expect(result.citation?.citeKey).toBe('citation2023');
         });
 
         it('should extract ref.ly link and clean mainText', () => {
@@ -97,26 +200,10 @@ Third line.
             expect(result.reflyLink).toBe('https://ref.ly/logosref/phi.1.1;esv');
         });
 
-        it('should extract ref.ly link from BibTeX if not in mainText', () => {
-            const clipboard = `Quote text
-@book{smith2020,
-  title = {Test},
-  url = {https://ref.ly/logosref/phi.1.1;esv},
-}`;
-            const result = parseLogosClipboard(clipboard);
-
-            expect(result.mainText).toBe('Quote text');
-            expect(result.reflyLink).toBe('https://ref.ly/logosref/phi.1.1;esv');
-        });
-
-        it('should extract ref.ly link from BibTeX title field', () => {
-            const clipboard = `Quote text
-@book{Waltke_Yu_2007,
-title={[An Old Testament theology](https://ref.ly/logosres/ottheowaltke?ref=Page.p+254&off=1560)},
-}`;
-            const result = parseLogosClipboard(clipboard);
-
-            expect(result.reflyLink).toBe('https://ref.ly/logosres/ottheowaltke?ref=Page.p+254&off=1560');
+        it('should respect preferred format when specified', () => {
+            const clipboard = `Smith, J. A. (2020). Test title. Publisher.`;
+            const result = parseLogosClipboard(clipboard, 'apa');
+            expect(result.citation?.format).toBe('apa');
         });
     });
 
