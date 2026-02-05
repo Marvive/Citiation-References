@@ -131,19 +131,37 @@ export default class CitationReferencePlugin extends Plugin {
             `> ${mainText.split('\n').join('\n> ')}`
         ];
 
-        if (this.settings.addNewLineBeforeLink) {
+        // Resource link logic
+        let resourceLinkText = "";
+        if (this.settings.includeReflyLink && reflyLink) {
+            resourceLinkText = `[Resource Link](${reflyLink})`;
+        }
+
+        // Full citation logic
+        if (this.settings.showFullCitationInCallout) {
+            let citationText = citation.rawCitation;
+            if (resourceLinkText) {
+                // Determine if we should append on the same line or new line
+                if (citationText.includes('\n')) {
+                    citationText += `\n${resourceLinkText}`;
+                } else {
+                    citationText += ` ${resourceLinkText}`;
+                }
+            }
+            quotedTextParts.push(`> `);
+            quotedTextParts.push(`> ${citationText.split('\n').join('\n> ')}`);
+            quotedTextParts.push(`> `);
+        } else if (resourceLinkText) {
+            // Show link on its own if citation is hidden but link is enabled
+            quotedTextParts.push(`> `);
+            quotedTextParts.push(`> ${resourceLinkText}`);
             quotedTextParts.push(`> `);
         }
 
         const linkAlias = `${noteName}${pageLabel}`;
-
-        if (this.settings.includeReflyLink && reflyLink) {
-            quotedTextParts.push(`> [Resource Link](${reflyLink})`);
-            quotedTextParts.push(`> `);
-        }
-
         quotedTextParts.push(`> [[${filePath}|${linkAlias}]] ^${blockId}`);
         const quotedText = quotedTextParts.join('\n');
+
 
         // Always add extra newline after callout (was a toggle, now default)
         const newlineAfter = '\n\n';
@@ -166,7 +184,8 @@ export default class CitationReferencePlugin extends Plugin {
     ): Promise<void> {
         const abstractFile = this.app.vault.getAbstractFileByPath(filePath);
         const abstractFileFolder = this.app.vault.getAbstractFileByPath(folder);
-        const linkBack = `![[${sourceBasename}#^${blockId}]]${page ? ` → p. ${page}` : ''}`;
+        // Link format: [[SourceNote#^id]]![[SourceNote#^id]]
+        const linkBack = `[[${sourceBasename}#^${blockId}]]![[${sourceBasename}#^${blockId}]]${page ? ` → p. ${page}` : ''}`;
 
         if (!abstractFile) {
             // Create folder if needed
@@ -174,7 +193,7 @@ export default class CitationReferencePlugin extends Plugin {
                 await this.app.vault.createFolder(folder);
             }
 
-            const citationPrefix = this.settings.addNewLineBeforeLink ? '\n' : '';
+            const citationPrefix = '\n';
 
             // Generate frontmatter from citation data
             const customFields = this.settings.useCustomMetadata ? this.settings.customMetadataFields : [];
@@ -202,7 +221,7 @@ export default class CitationReferencePlugin extends Plugin {
         }
 
         const refNote = await this.app.vault.read(abstractFile);
-        const citationPrefix = this.settings.addNewLineBeforeLink ? '\n' : '';
+        const citationPrefix = '\n';
         const citationLine = `${citationPrefix}- ${linkBack}`;
         let updatedContent: string;
 

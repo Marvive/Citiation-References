@@ -85,8 +85,8 @@ describe('File Utils', () => {
             expect(result).toContain('year: 2020');
             expect(result).toContain('publisher: "Academic Press"');
             expect(result).toContain('cite-key: "smith2020"');
-            expect(result).toContain('citation-format: bibtex');
         });
+
 
         it('should handle missing optional fields', () => {
             const citation: ParsedCitation = {

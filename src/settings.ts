@@ -75,16 +75,18 @@ export class CitationPluginSettingTab extends PluginSettingTab {
             );
 
         new Setting(this.containerEl)
-            .setName("Add newline before linked note")
-            .setDesc("Adds an extra blank line before the linked note at the bottom of citations")
+            .setName("Show full citation in callout")
+            .setDesc("Includes the full raw citation text at the bottom of the callout")
             .addToggle((toggle) =>
                 toggle
-                    .setValue(this.plugin.settings.addNewLineBeforeLink)
+                    .setValue(this.plugin.settings.showFullCitationInCallout)
                     .onChange(async (value) => {
-                        this.plugin.settings.addNewLineBeforeLink = value;
+                        this.plugin.settings.showFullCitationInCallout = value;
                         await this.plugin.saveSettings();
                     })
             );
+
+
 
 
 

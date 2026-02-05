@@ -57,7 +57,6 @@ export function generateCitationFrontmatter(citation: ParsedCitation, customFiel
         metadata += `url: "${citation.url}"\n`;
     }
     metadata += `cite-key: "${citation.citeKey}"\n`;
-    metadata += `citation-format: ${citation.format}\n`;
 
     // Add custom user-defined fields as empty
     customFields.forEach(field => {
