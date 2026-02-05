@@ -1,8 +1,10 @@
 import {
     sanitizeNoteName,
     generateNotePath,
-    generateMetadataFrontmatter
+    generateMetadataFrontmatter,
+    generateCitationFrontmatter
 } from '../utils/file-utils';
+import { ParsedCitation } from '../types';
 
 describe('File Utils', () => {
     describe('sanitizeNoteName', () => {
@@ -59,6 +61,87 @@ describe('File Utils', () => {
         it('should end with proper formatting', () => {
             const result = generateMetadataFrontmatter(['field']);
             expect(result).toMatch(/---\n\n$/);
+        });
+    });
+
+    describe('generateCitationFrontmatter', () => {
+        it('should generate frontmatter from citation data', () => {
+            const citation: ParsedCitation = {
+                format: 'bibtex',
+                citeKey: 'smith2020',
+                author: 'John Smith',
+                title: 'Systematic Theology',
+                year: '2020',
+                pages: '123',
+                publisher: 'Academic Press',
+                url: null,
+                rawCitation: '@book{smith2020}'
+            };
+            const result = generateCitationFrontmatter(citation);
+
+            expect(result).toContain('---');
+            expect(result).toContain('title: "Systematic Theology"');
+            expect(result).toContain('author: "John Smith"');
+            expect(result).toContain('year: 2020');
+            expect(result).toContain('publisher: "Academic Press"');
+            expect(result).toContain('cite-key: "smith2020"');
+        });
+
+
+        it('should handle missing optional fields', () => {
+            const citation: ParsedCitation = {
+                format: 'apa',
+                citeKey: 'doe2021',
+                author: null,
+                title: 'Some Title',
+                year: null,
+                pages: null,
+                publisher: null,
+                url: null,
+                rawCitation: ''
+            };
+            const result = generateCitationFrontmatter(citation);
+
+            expect(result).toContain('title: "Some Title"');
+            expect(result).not.toContain('author:');
+            expect(result).not.toContain('year:');
+            expect(result).not.toContain('publisher:');
+        });
+
+        it('should include custom fields', () => {
+            const citation: ParsedCitation = {
+                format: 'mla',
+                citeKey: 'test',
+                author: 'Test Author',
+                title: 'Test Title',
+                year: '2023',
+                pages: null,
+                publisher: null,
+                url: null,
+                rawCitation: ''
+            };
+            const customFields = ['tags', 'related notes'];
+            const result = generateCitationFrontmatter(citation, customFields);
+
+            expect(result).toContain('tags: ');
+            expect(result).toContain('related notes: ');
+        });
+
+        it('should escape quotes in field values', () => {
+            const citation: ParsedCitation = {
+                format: 'bibtex',
+                citeKey: 'test',
+                author: null,
+                title: 'Book with "Quoted" Title',
+                year: null,
+                pages: null,
+                publisher: null,
+                url: null,
+                rawCitation: ''
+            };
+            const result = generateCitationFrontmatter(citation);
+
+            expect(result).toContain('title: "Book with \\"Quoted\\" Title"');
         });
     });
 });

@@ -1,9 +1,9 @@
 {
-	"id": "logos-references",
-	"name": "Logos References",
-	"version": "1.1.0",
+	"id": "citation-references",
+	"name": "Citation References",
+	"version": "2.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Easily take references from Logos Bible Software and connect them within your notes.",
+	"description": "Easily manage citations from Logos Bible Software, BibTeX, MLA, APA, and Chicago formats within your notes.",
 	"author": "Michael Marvive",
 	"authorUrl": "https://github.com/Marvive",
 	"fundingUrl": "https://github.com/sponsors/Marvive",

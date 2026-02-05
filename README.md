@@ -1,40 +1,67 @@
-# Logos References
+# Citation References
+
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/Marvive/logos-references?style=for-the-badge&sort=semver)
 
-Logos References is an overhauled and highly customizable version of the original [logos-refs](https://github.com/joey-kilgore/logos-refs) plugin by Joey Kilgore. This version features a complete architectural overhaul, ongoing maintenance, and many new features for power users.
+Citation References is a powerful Obsidian plugin designed to streamline the academic citation and study workflow. While it remains a **first-class tool for Logos Bible Software users**, this version has been completely overhauled to serve as a **general-purpose citation manager** for any academic research.
 
-- Simplify referencing and linking material from Logos Bible Software
-- Easily aggregate bibtex references for your note
-- **Customizable Callouts**: Change callout titles and use a consistent church icon style with custom colors.
-- **Improved Note Naming**: Automatically use book titles for note filenames with special character stripping for OS compatibility.
-- **Bible Verse Linking**: Automatically detect Bible verses and link them to Logos with your preferred translation (NIV, ESV, NASB, LSB, NLT).
-- **Custom Metadata**: Prepend custom categories/keys to generated notes automatically.
+By generalizing the core parsing engine, the plugin now seamlessly handles citations from web databases, PDF managers, and other library software, ensuring your research notes remain consistent regardless of the source.
+
+## Features
+
+- **Multi-format citation support**: Agnostic detection of BibTeX, MLA, APA, and Chicago formats from any clipboard source.
+- **Logos Bible Software integration**: Deep integration for Logos users including internal resource linking and biblical language support.
+- **Intelligent Text-Citation splitting**: Automatically separates your quoted highlights from their source citations, supporting generalized heuristics for blank lines and formatting.
+- **Smart metadata storage**: Citation data stored as structured YAML frontmatter properties for easy filtering and dataview integration.
+- **Bible verse linking**: Advanced sequential linking (e.g., "Deut. 19:12; 21:1") with book-awareness and support for multiple translations.
+- **Formatting preservation**: Zero-loss conversion of italics, bold, and superscripts from the source to proper Markdown.
+- **Customizable workflows**: Personalize callouts, metadata fields, and file naming conventions.
 
 ## Example Use
-Copy a passage from logos and utilize the paste command within **Logos References** plugin, and automatically generate or reference a citation note.
 
-## Features & Settings
-- **Callout Title**: Customize the header of the pasted reference block.
-- **Append "References" to Title**: Use `{Book Title} - References` instead of BibTeX IDs.
-- **Auto-link Bible Verses**: Toggle verse detection and choose your preferred Bible version for Logos links.
-- **Metadata Management**: Enable YAML frontmatter and manage a list of categories to be added to every new reference note as separate properties.
-- **Newline Formatting**: Optional clean spacing between links.
+Copy a citation from Logos or any academic source and use the paste command within **Citation References** plugin to automatically generate or reference a citation note with proper metadata.
 
-## Setup notes
-1. Make sure community plugins are turned on, and install the **Logos References** plugin
-2. Under the **Logos References** settings, set your reference directory (I like having a `logos-references` folder)
-3. In Logos, under program settings, set citation style to `BibTeX Style`
-4. You are ready to go!
+## Supported Citation Formats
+
+| Format | Example |
+|--------|---------|
+| **BibTeX** | `@book{smith2020, author={...}, title={...}}` |
+| **MLA** | `Smith, John. Title of Work. Publisher, 2020.` |
+| **APA** | `Smith, J. A. (2020). Title of work. Publisher.` |
+| **Chicago** | `Smith, John. Title of Work. Place: Publisher, 2020.` |
+
+## Settings
+
+- **Citation note folder**: Where citation notes are saved
+- **Citation format**: Auto-detect or specify BibTeX/MLA/APA/Chicago
+- **Callout title**: Customize the callout block header
+- **Use custom metadata**: Enable additional YAML frontmatter fields
+- **Show ribbon icon**: Toggle the quick-paste icon in the ribbon
+
+### Logos Specific Settings
+
+These settings are grouped under a collapsible section:
+
+- **Auto-detect Bible verses**: Link verse references to Logos
+- **Preferred Bible translation**: Choose NIV, ESV, NASB, LSB, or NLT
+
+## Setup
+
+1. Enable community plugins and install **Citation References**
+2. Set your citation note folder in settings (e.g., `citations`)
+3. For Logos users: In Logos program settings, set citation style to `BibTeX Style`
+4. Start pasting citations!
 
 ## Credits
+
 Based on the original work by [Joey Kilgore](https://github.com/joey-kilgore). This version represents a complete overhaul and expansion of the original plugin's capabilities.
 
 ## Development
+
 Maintained by **Michael Marvive**. All bugs and feature requests should be filed under the [Issues](https://github.com/Marvive/logos-references/issues).
 
 ## 🖤 Support & Feedback
 
-**Logos References** is a volunteer-led, open-source project. If it has improved your study workflow, please consider supporting its ongoing development:
+**Citation References** is a volunteer-led, open-source project. If it has improved your study workflow, please consider supporting its ongoing development:
 
 - 🌟 **Star the Repository** – Help others find this tool by giving us a star.
 - ☕ **Sponsor Maintenance** – Support the time and effort required to keep this plugin updated and bug-free.

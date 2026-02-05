@@ -1,17 +1,17 @@
 /**
- * Settings tab UI for the Logos References Plugin
+ * Settings tab UI for the Citation References Plugin
  */
 
 import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import { FolderSuggest } from './ui/folder-suggest';
-import { LogosPluginSettings } from './types';
+import { LogosPluginSettings, CitationFormat } from './types';
 
 interface PluginWithSettings extends Plugin {
     settings: LogosPluginSettings;
     saveSettings(): Promise<void>;
 }
 
-export class LogosPluginSettingTab extends PluginSettingTab {
+export class CitationPluginSettingTab extends PluginSettingTab {
     plugin: PluginWithSettings;
     private dragIndex: number | null = null;
 
@@ -26,28 +26,47 @@ export class LogosPluginSettingTab extends PluginSettingTab {
         containerEl.empty();
 
         new Setting(this.containerEl)
-            .setName("Bibtex note folder")
-            .setDesc("Folder to save bibtex reference notes")
+            .setName("Citation note folder")
+            .setDesc("Folder to save citation reference notes")
             .addSearch((text) => {
                 new FolderSuggest(this.app, text.inputEl);
                 text.setPlaceholder("Example: folder1/folder2")
-                    .setValue(this.plugin.settings.bibFolder)
+                    .setValue(this.plugin.settings.citationFolder)
                     .onChange(async (new_folder) => {
                         new_folder = new_folder.trim();
                         new_folder = new_folder.replace(/\/$/, "");
 
-                        this.plugin.settings.bibFolder = new_folder;
+                        this.plugin.settings.citationFolder = new_folder;
                         await this.plugin.saveSettings();
                     });
-                text.inputEl.parentElement?.classList.add("bibtex-search");
+                text.inputEl.parentElement?.classList.add("citation-search");
             });
 
         new Setting(this.containerEl)
+            .setName("Citation format")
+            .setDesc("Choose the citation format or let the plugin auto-detect")
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOptions({
+                        auto: "Auto-detect",
+                        bibtex: "BibTeX",
+                        mla: "MLA",
+                        apa: "APA",
+                        chicago: "Chicago",
+                    })
+                    .setValue(this.plugin.settings.citationFormat)
+                    .onChange(async (value) => {
+                        this.plugin.settings.citationFormat = value as CitationFormat;
+                        await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(this.containerEl)
             .setName("Callout title")
-            .setDesc("The title for the callout block (default is \"logos reference\")")
+            .setDesc("The title for the callout block (default is \"citation reference\")")
             .addText((text) =>
                 text
-                    .setPlaceholder("Example: logos reference")
+                    .setPlaceholder("Example: citation reference")
                     .setValue(this.plugin.settings.customCalloutTitle)
                     .onChange(async (value) => {
                         this.plugin.settings.customCalloutTitle = value;
@@ -56,90 +75,24 @@ export class LogosPluginSettingTab extends PluginSettingTab {
             );
 
         new Setting(this.containerEl)
-            .setName("Append \"references\" to note title")
-            .setDesc("New book notes will be named \"{Book Title} - references\" instead of just the cite key")
+            .setName("Show full citation in callout")
+            .setDesc("Includes the full raw citation text at the bottom of the callout")
             .addToggle((toggle) =>
                 toggle
-                    .setValue(this.plugin.settings.appendReferencesToTitle)
+                    .setValue(this.plugin.settings.showFullCitationInCallout)
                     .onChange(async (value) => {
-                        this.plugin.settings.appendReferencesToTitle = value;
+                        this.plugin.settings.showFullCitationInCallout = value;
                         await this.plugin.saveSettings();
                     })
             );
 
-        new Setting(this.containerEl)
-            .setName("Add newline before linked note")
-            .setDesc("Adds an extra blank line before the linked note at the bottom of citations")
-            .addToggle((toggle) =>
-                toggle
-                    .setValue(this.plugin.settings.addNewLineBeforeLink)
-                    .onChange(async (value) => {
-                        this.plugin.settings.addNewLineBeforeLink = value;
-                        await this.plugin.saveSettings();
-                    })
-            );
 
-        new Setting(this.containerEl)
-            .setName("Add space after callout")
-            .setDesc("Adds an extra blank line after the callout block so that there is space before what you type next")
-            .addToggle((toggle) =>
-                toggle
-                    .setValue(this.plugin.settings.addNewLineAfterCallout)
-                    .onChange(async (value) => {
-                        this.plugin.settings.addNewLineAfterCallout = value;
-                        await this.plugin.saveSettings();
-                    })
-            );
 
-        new Setting(this.containerEl)
-            .setName("Include Logos resource link")
-            .setDesc("When enabled, the Logos ref.ly hyperlink will be included above the note link")
-            .addToggle((toggle) =>
-                toggle
-                    .setValue(this.plugin.settings.includeReflyLink)
-                    .onChange(async (value) => {
-                        this.plugin.settings.includeReflyLink = value;
-                        await this.plugin.saveSettings();
-                    })
-            );
 
-        new Setting(this.containerEl)
-            .setName("Auto-detect bible verses")
-            .setDesc("Automatically detects bible verse references and links them to logos")
-            .addToggle((toggle) =>
-                toggle
-                    .setValue(this.plugin.settings.autoDetectBibleVerses)
-                    .onChange(async (value) => {
-                        this.plugin.settings.autoDetectBibleVerses = value;
-                        await this.plugin.saveSettings();
-                        this.display();
-                    })
-            );
-
-        if (this.plugin.settings.autoDetectBibleVerses) {
-            new Setting(this.containerEl)
-                .setName("Preferred bible translation")
-                .setDesc("The translation to use for logos ref.ly links")
-                .addDropdown((dropdown) =>
-                    dropdown
-                        .addOptions({
-                            niv: "NIV",
-                            esv: "ESV",
-                            nasb: "NASB",
-                            lsb: "LSB",
-                            nlt: "NLT",
-                        })
-                        .setValue(this.plugin.settings.bibleTranslation)
-                        .onChange(async (value) => {
-                            this.plugin.settings.bibleTranslation = value;
-                            await this.plugin.saveSettings();
-                        })
-                );
-        }
 
         new Setting(this.containerEl)
             .setName("Use custom metadata")
-            .setDesc("Add custom metadata categories to the top of new book notes")
+            .setDesc("Add custom metadata categories to the top of new citation notes")
             .addToggle((toggle) =>
                 toggle
                     .setValue(this.plugin.settings.useCustomMetadata)
@@ -254,20 +207,8 @@ export class LogosPluginSettingTab extends PluginSettingTab {
         }
 
         new Setting(this.containerEl)
-            .setName("Retain formatting")
-            .setDesc("When enabled, italics, bold, and superscript formatting from logos will be preserved")
-            .addToggle((toggle) =>
-                toggle
-                    .setValue(this.plugin.settings.retainFormatting)
-                    .onChange(async (value) => {
-                        this.plugin.settings.retainFormatting = value;
-                        await this.plugin.saveSettings();
-                    })
-            );
-
-        new Setting(this.containerEl)
             .setName("Show ribbon icon")
-            .setDesc("Toggle the church icon in the Obsidian ribbon for one-click pasting")
+            .setDesc("Toggle the citation icon in the Obsidian ribbon for one-click pasting")
             .addToggle((toggle) =>
                 toggle
                     .setValue(this.plugin.settings.showRibbonIcon)
@@ -277,5 +218,57 @@ export class LogosPluginSettingTab extends PluginSettingTab {
                         (this.plugin as unknown as { refreshRibbonIcon: () => void }).refreshRibbonIcon();
                     })
             );
+
+        // Logos Specific Settings - Collapsible Section
+        const logosSection = containerEl.createEl('details', { cls: 'logos-settings-section' });
+        logosSection.createEl('summary', { text: 'Logos specific settings' });
+
+        const logosSectionContent = logosSection.createDiv({ cls: 'logos-settings-content' });
+
+        new Setting(logosSectionContent)
+            .setName("Logos resource link")
+            .setDesc("When enabled, includes the ref.ly hyperlink above the note link in callouts")
+            .addToggle((toggle) =>
+                toggle
+                    .setValue(this.plugin.settings.includeReflyLink)
+                    .onChange(async (value) => {
+                        this.plugin.settings.includeReflyLink = value;
+                        await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(logosSectionContent)
+            .setName("Auto-detect bible verses")
+            .setDesc("Automatically detects bible verse references and links them")
+            .addToggle((toggle) =>
+                toggle
+                    .setValue(this.plugin.settings.autoDetectBibleVerses)
+                    .onChange(async (value) => {
+                        this.plugin.settings.autoDetectBibleVerses = value;
+                        await this.plugin.saveSettings();
+                        this.display();
+                    })
+            );
+
+        if (this.plugin.settings.autoDetectBibleVerses) {
+            new Setting(logosSectionContent)
+                .setName("Preferred bible translation")
+                .setDesc("The translation to use for ref.ly links")
+                .addDropdown((dropdown) =>
+                    dropdown
+                        .addOptions({
+                            niv: "NIV",
+                            esv: "ESV",
+                            nasb: "NASB",
+                            lsb: "LSB",
+                            nlt: "NLT",
+                        })
+                        .setValue(this.plugin.settings.bibleTranslation)
+                        .onChange(async (value) => {
+                            this.plugin.settings.bibleTranslation = value;
+                            await this.plugin.saveSettings();
+                        })
+                );
+        }
     }
 }

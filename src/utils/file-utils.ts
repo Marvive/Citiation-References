@@ -2,6 +2,8 @@
  * Utility functions for file name handling
  */
 
+import { ParsedCitation } from '../types';
+
 /**
  * Sanitizes a note name by removing characters that are invalid in file paths
  * Removes: / \ :
@@ -19,7 +21,7 @@ export function generateNotePath(noteName: string, folder: string): string {
 }
 
 /**
- * Generates YAML frontmatter from a list of metadata fields
+ * Generates YAML frontmatter from a list of metadata fields (legacy)
  */
 export function generateMetadataFrontmatter(fields: string[]): string {
     if (fields.length === 0) return '';
@@ -28,6 +30,36 @@ export function generateMetadataFrontmatter(fields: string[]): string {
     fields.forEach(field => {
         metadata += `${field}: \n`;
     });
+    metadata += '---\n\n';
+    return metadata;
+}
+
+/**
+ * Generates YAML frontmatter from citation data and custom fields
+ */
+export function generateCitationFrontmatter(citation: ParsedCitation, customFields: string[] = []): string {
+    let metadata = '---\n';
+
+    // Add citation fields
+    if (citation.title) {
+        metadata += `title: "${citation.title.replace(/"/g, '\\"')}"\n`;
+    }
+    if (citation.author) {
+        metadata += `author: "${citation.author.replace(/"/g, '\\"')}"\n`;
+    }
+    if (citation.year) {
+        metadata += `year: ${citation.year}\n`;
+    }
+    if (citation.publisher) {
+        metadata += `publisher: "${citation.publisher.replace(/"/g, '\\"')}"\n`;
+    }
+    metadata += `cite-key: "${citation.citeKey}"\n`;
+
+    // Add custom user-defined fields as empty
+    customFields.forEach(field => {
+        metadata += `${field}: \n`;
+    });
+
     metadata += '---\n\n';
     return metadata;
 }

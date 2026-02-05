@@ -1,17 +1,17 @@
 /**
- * Logos References Plugin - Main Entry Point
+ * Citation References Plugin - Main Entry Point
  * 
- * A refined plugin for managing Logos Bible Software references in Obsidian.
+ * A refined plugin for managing citations from various sources in Obsidian.
  */
 
 import { Editor, MarkdownView, Notice, Plugin, TAbstractFile, TFile, TFolder, htmlToMarkdown } from 'obsidian';
-import { LogosPluginSettings, DEFAULT_SETTINGS } from './types';
-import { LogosPluginSettingTab } from './settings';
-import { parseLogosClipboard, extractCiteKey, extractBookTitle, cleanFormattedText } from './utils/clipboard-parser';
+import { LogosPluginSettings, DEFAULT_SETTINGS, ParsedCitation } from './types';
+import { CitationPluginSettingTab } from './settings';
+import { parseLogosClipboard, cleanFormattedText } from './utils/clipboard-parser';
 import { linkBibleVerses } from './utils/bible-linker';
-import { sanitizeNoteName, generateMetadataFrontmatter } from './utils/file-utils';
+import { sanitizeNoteName, generateCitationFrontmatter } from './utils/file-utils';
 
-export default class LogosReferencePlugin extends Plugin {
+export default class CitationReferencePlugin extends Plugin {
     settings: LogosPluginSettings;
     private ribbonIconEl: HTMLElement | null = null;
 
@@ -20,28 +20,28 @@ export default class LogosReferencePlugin extends Plugin {
         this.refreshRibbonIcon();
 
         this.addCommand({
-            id: 'paste-logos-reference',
-            name: 'Paste logos reference with bibtex',
+            id: 'paste-citation-reference',
+            name: 'Paste citation reference',
             editorCallback: async (editor: Editor, view: MarkdownView) => {
-                await this.handlePasteLogosReference(editor, view);
+                await this.handlePasteCitationReference(editor, view);
             }
         });
 
         this.addCommand({
-            id: 'list-bibtex-references',
-            name: 'List all bibtex references',
+            id: 'list-all-citations',
+            name: 'List all citations',
             editorCallback: async (editor: Editor, view: MarkdownView) => {
-                await this.handleListBibtexReferences(editor, view);
+                await this.handleListCitations(editor, view);
             }
         });
 
-        this.addSettingTab(new LogosPluginSettingTab(this.app, this));
+        this.addSettingTab(new CitationPluginSettingTab(this.app, this));
     }
 
     /**
-     * Handles the "Paste Logos reference" command
+     * Handles the "Paste citation reference" command
      */
-    private async handlePasteLogosReference(editor: Editor, view: MarkdownView): Promise<void> {
+    private async handlePasteCitationReference(editor: Editor, view: MarkdownView): Promise<void> {
         const file = view.file;
         if (!file) {
             new Notice("No active editor");
@@ -52,65 +52,58 @@ export default class LogosReferencePlugin extends Plugin {
 
         // 1. Read plain text version first (most reliable for BibTeX)
         const plainClipboard = await navigator.clipboard.readText();
-        const { mainText: plainMainText, bibtex: plainBibtex, page: plainPage, reflyLink: plainReflyLink } = parseLogosClipboard(plainClipboard);
+        let { mainText, citation, page, reflyLink } = parseLogosClipboard(plainClipboard, this.settings.citationFormat);
 
-        let mainText = plainMainText;
-        let bibtex = plainBibtex;
-        let page = plainPage;
-        let reflyLink = plainReflyLink;
+        // 2. Try to read HTML version to get formatted text (always enabled now)
+        try {
+            const clipboardItems = await navigator.clipboard.read();
+            for (const item of clipboardItems) {
+                if (item.types.includes('text/html')) {
+                    const blob = await item.getType('text/html');
+                    const html = await blob.text();
+                    const markdown = htmlToMarkdown(html);
 
-        // 2. Try to read HTML version to get formatted text (only if enabled)
-        if (this.settings.retainFormatting) {
-            try {
-                const clipboardItems = await navigator.clipboard.read();
-                for (const item of clipboardItems) {
-                    if (item.types.includes('text/html')) {
-                        const blob = await item.getType('text/html');
-                        const html = await blob.text();
-                        const markdown = htmlToMarkdown(html);
+                    // Parse the markdown version as well
+                    const parsedMarkdown = parseLogosClipboard(markdown, this.settings.citationFormat);
 
-                        // Parse the markdown version as well
-                        const parsedMarkdown = parseLogosClipboard(markdown);
+                    // Use formatted main text
+                    mainText = parsedMarkdown.mainText;
 
-                        // Use formatted main text
-                        mainText = parsedMarkdown.mainText;
-
-                        // If BibTeX was missing in plain text but present in HTML (unlikely but possible), use it
-                        if (!bibtex && parsedMarkdown.bibtex) {
-                            bibtex = parsedMarkdown.bibtex;
-                        }
-                        if (!page && parsedMarkdown.page) {
-                            page = parsedMarkdown.page;
-                        }
-                        if (!reflyLink && parsedMarkdown.reflyLink) {
-                            reflyLink = parsedMarkdown.reflyLink;
-                        }
-                        break;
+                    // If citation was missing in plain text but present in HTML, use it
+                    if (!citation && parsedMarkdown.citation) {
+                        citation = parsedMarkdown.citation;
                     }
+                    if (!page && parsedMarkdown.page) {
+                        page = parsedMarkdown.page;
+                    }
+                    if (!reflyLink && parsedMarkdown.reflyLink) {
+                        reflyLink = parsedMarkdown.reflyLink;
+                    }
+                    if (reflyLink) {
+                        reflyLink = reflyLink.replace(/[\\.,;]+$/, '');
+                    }
+                    break;
+
                 }
-            } catch (e) {
-                console.error("Failed to read HTML from clipboard", e);
             }
+        } catch (e) {
+            console.error("Failed to read HTML from clipboard", e);
         }
 
-        if (!bibtex) {
-            new Notice("Could not find BibTeX in clipboard. Please ensure you copied a BibTeX citation from Logos.");
+        if (!citation) {
+            new Notice("Could not find citation in clipboard. Please ensure you copied a valid citation.");
             return;
         }
 
-        // Apply specific formatting requested by user (only if enabled)
-        if (this.settings.retainFormatting) {
-            mainText = cleanFormattedText(mainText);
-        }
+        // Apply formatting cleanup (always enabled now)
+        mainText = cleanFormattedText(mainText);
 
-        const citeKey = extractCiteKey(bibtex);
-        const bookTitle = extractBookTitle(bibtex);
-        const folder = this.settings.bibFolder.trim() || '';
+        const folder = this.settings.citationFolder.trim() || '';
 
-        // Determine the note name based on settings
-        let noteName = citeKey;
-        if (this.settings.appendReferencesToTitle && bookTitle) {
-            noteName = `${bookTitle} - References`;
+        // Determine the note name - always use book title (cleaned) with "References" suffix
+        let noteName = citation.citeKey;
+        if (citation.cleanedTitle || citation.title) {
+            noteName = `${citation.cleanedTitle || citation.title} - References`;
         }
         noteName = sanitizeNoteName(noteName);
 
@@ -132,37 +125,57 @@ export default class LogosReferencePlugin extends Plugin {
         } else {
             counters[notePath]++;
         }
-        const blockId = `${citeKey.replace(' ', '-')}-${counters[notePath]}`;
+        const blockId = `${citation.citeKey.replace(' ', '-')}-${counters[notePath]}`;
         await this.saveSettings();
 
         // Build the callout block
-        const calloutTitle = this.settings.customCalloutTitle || 'Logos Reference';
+        const calloutTitle = this.settings.customCalloutTitle || 'Citation Reference';
         const quotedTextParts = [
-            `> [!logos] ${calloutTitle}`,
+            `> [!cite] ${calloutTitle}`,
             `> ${mainText.split('\n').join('\n> ')}`
         ];
 
-        if (this.settings.addNewLineBeforeLink) {
-            quotedTextParts.push(`> `);
-        }
-
-        const linkAlias = this.settings.appendReferencesToTitle
-            ? `${noteName}${pageLabel}`
-            : `${citeKey}${pageLabel}`;
-
+        // Resource link logic
+        let resourceLinkText = "";
         if (this.settings.includeReflyLink && reflyLink) {
-            quotedTextParts.push(`> [Resource Link](${reflyLink})`);
+            resourceLinkText = `[Resource Link](${reflyLink})`;
+        }
+
+        // Full citation logic
+        if (this.settings.showFullCitationInCallout) {
+            let citationText = citation.rawCitation;
+            if (resourceLinkText) {
+                // Determine if we should append on the same line or new line
+                if (citationText.includes('\n')) {
+                    citationText += `\n${resourceLinkText}`;
+                } else {
+                    citationText += ` ${resourceLinkText}`;
+                }
+            }
+            quotedTextParts.push(`> `);
+            quotedTextParts.push(`> ${citationText.split('\n').join('\n> ')}`);
+            quotedTextParts.push(`> `);
+        } else if (resourceLinkText) {
+            // Show link on its own if citation is hidden but link is enabled
+            quotedTextParts.push(`> `);
+            quotedTextParts.push(`> ${resourceLinkText}`);
+            quotedTextParts.push(`> `);
+        } else {
+            // If neither citation nor resource link, add a newline before the note link
             quotedTextParts.push(`> `);
         }
 
+        const linkAlias = `${noteName}${pageLabel}`;
         quotedTextParts.push(`> [[${filePath}|${linkAlias}]] ^${blockId}`);
         const quotedText = quotedTextParts.join('\n');
 
-        const newlineAfter = this.settings.addNewLineAfterCallout ? '\n\n' : '\n';
+
+        // Always add extra newline after callout (was a toggle, now default)
+        const newlineAfter = '\n\n';
         editor.replaceSelection(`${quotedText}${newlineAfter}`);
 
         // Create or update the reference file
-        await this.createOrUpdateReferenceFile(filePath, folder, bibtex, file.basename, blockId, page);
+        await this.createOrUpdateReferenceFile(filePath, folder, citation, file.basename, blockId, page);
     }
 
     /**
@@ -171,14 +184,15 @@ export default class LogosReferencePlugin extends Plugin {
     private async createOrUpdateReferenceFile(
         filePath: string,
         folder: string,
-        bibtex: string,
+        citation: ParsedCitation,
         sourceBasename: string,
         blockId: string,
         page: string | null
     ): Promise<void> {
         const abstractFile = this.app.vault.getAbstractFileByPath(filePath);
         const abstractFileFolder = this.app.vault.getAbstractFileByPath(folder);
-        const linkBack = `[[${sourceBasename}#^${blockId}]]${page ? ` → p. ${page}` : ''}`;
+        // Link format: [[SourceNote#^id]]![[SourceNote#^id]]
+        const linkBack = `[[${sourceBasename}#^${blockId}]]![[${sourceBasename}#^${blockId}]]${page ? ` → p. ${page}` : ''}`;
 
         if (!abstractFile) {
             // Create folder if needed
@@ -186,16 +200,13 @@ export default class LogosReferencePlugin extends Plugin {
                 await this.app.vault.createFolder(folder);
             }
 
-            const citationPrefix = this.settings.addNewLineBeforeLink ? '\n' : '';
-            const metadata = this.settings.useCustomMetadata
-                ? generateMetadataFrontmatter(this.settings.customMetadataFields)
-                : '';
+            const citationPrefix = '\n';
+
+            // Generate frontmatter from citation data
+            const customFields = this.settings.useCustomMetadata ? this.settings.customMetadataFields : [];
+            const metadata = generateCitationFrontmatter(citation, customFields);
 
             const content = metadata + [
-                '```bibtex',
-                bibtex.replace(/pages\s*=\s*{[^}]*},?\s*/gi, ""),
-                '```',
-                '',
                 '## Citations',
                 `${citationPrefix}- ${linkBack}`
             ].join('\n');
@@ -217,7 +228,7 @@ export default class LogosReferencePlugin extends Plugin {
         }
 
         const refNote = await this.app.vault.read(abstractFile);
-        const citationPrefix = this.settings.addNewLineBeforeLink ? '\n' : '';
+        const citationPrefix = '\n';
         const citationLine = `${citationPrefix}- ${linkBack}`;
         let updatedContent: string;
 
@@ -239,9 +250,9 @@ export default class LogosReferencePlugin extends Plugin {
     }
 
     /**
-     * Handles the "List BibTeX references" command
+     * Handles the "List all citations" command
      */
-    private async handleListBibtexReferences(editor: Editor, view: MarkdownView): Promise<void> {
+    private async handleListCitations(editor: Editor, view: MarkdownView): Promise<void> {
         const filePath = view.file?.path;
         if (!filePath) {
             new Notice("No active file");
@@ -254,18 +265,18 @@ export default class LogosReferencePlugin extends Plugin {
             return;
         }
 
-        const bibtexReferences = await this.getBibtexFromLinks(links);
-        if (bibtexReferences.length === 0) {
-            new Notice("No bibtex references found in linked notes");
+        const citations = await this.getCitationsFromLinks(links);
+        if (citations.length === 0) {
+            new Notice("No citations found in linked notes");
             return;
         }
 
-        const bibtexList = bibtexReferences.join("\n\n");
+        const citationList = citations.join("\n\n");
         const activeFile = this.app.workspace.getActiveFile();
 
         if (activeFile instanceof TFile) {
             const content = await this.app.vault.read(activeFile);
-            const updatedContent = `${content}\n\n## Bibliography\n${bibtexList}`;
+            const updatedContent = `${content}\n\n## Bibliography\n${citationList}`;
             await this.app.vault.modify(activeFile, updatedContent);
             new Notice("References added to the document");
         } else {
@@ -287,23 +298,39 @@ export default class LogosReferencePlugin extends Plugin {
     }
 
     /**
-     * Extracts BibTeX content from linked notes
+     * Extracts citation content from linked notes (looks for frontmatter cite-key)
      */
-    async getBibtexFromLinks(links: string[]): Promise<string[]> {
-        const bibtexReferences: string[] = [];
+    async getCitationsFromLinks(links: string[]): Promise<string[]> {
+        const citations: string[] = [];
         for (const link of links) {
             const file = this.app.vault.getAbstractFileByPath(link);
             if (file instanceof TFile) {
                 const content = await this.app.vault.read(file);
-                const bibtexMatch = content.match(/```bibtex[\s\S]*?```/);
 
+                // Try to extract from YAML frontmatter first
+                const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+                if (frontmatterMatch) {
+                    const frontmatter = frontmatterMatch[1];
+                    const titleMatch = frontmatter.match(/title:\s*"([^"]+)"/);
+                    const authorMatch = frontmatter.match(/author:\s*"([^"]+)"/);
+                    const yearMatch = frontmatter.match(/year:\s*(\d+)/);
+
+                    if (titleMatch && authorMatch) {
+                        const citation = `${authorMatch[1]}. *${titleMatch[1]}*${yearMatch ? ` (${yearMatch[1]})` : ''}.`;
+                        citations.push(citation);
+                        continue;
+                    }
+                }
+
+                // Fallback: try to find BibTeX code block (legacy format)
+                const bibtexMatch = content.match(/```bibtex[\s\S]*?```/);
                 if (bibtexMatch) {
                     const bibtexContent = bibtexMatch[0].replace(/```bibtex|```/g, '').trim();
-                    bibtexReferences.push(bibtexContent);
+                    citations.push(bibtexContent);
                 }
             }
         }
-        return bibtexReferences;
+        return citations;
     }
 
     async loadSettings() {
@@ -319,10 +346,10 @@ export default class LogosReferencePlugin extends Plugin {
      */
     refreshRibbonIcon() {
         if (this.settings.showRibbonIcon && !this.ribbonIconEl) {
-            this.ribbonIconEl = this.addRibbonIcon('church', 'Paste logos reference', async () => {
+            this.ribbonIconEl = this.addRibbonIcon('quote', 'Paste citation reference', async () => {
                 const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
                 if (activeView) {
-                    await this.handlePasteLogosReference(activeView.editor, activeView);
+                    await this.handlePasteCitationReference(activeView.editor, activeView);
                 } else {
                     new Notice("No active editor found");
                 }
