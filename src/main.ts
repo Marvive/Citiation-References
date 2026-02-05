@@ -166,7 +166,7 @@ export default class CitationReferencePlugin extends Plugin {
     ): Promise<void> {
         const abstractFile = this.app.vault.getAbstractFileByPath(filePath);
         const abstractFileFolder = this.app.vault.getAbstractFileByPath(folder);
-        const linkBack = `[[${sourceBasename}#^${blockId}]]${page ? ` → p. ${page}` : ''}`;
+        const linkBack = `![[${sourceBasename}#^${blockId}]]${page ? ` → p. ${page}` : ''}`;
 
         if (!abstractFile) {
             // Create folder if needed

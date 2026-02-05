@@ -38,6 +38,22 @@ describe('Clipboard Parser', () => {
             const unknown = 'Some random text';
             expect(detectCitationFormat(unknown)).toBe('bibtex');
         });
+
+        // Tests for Logos-style citations with markdown links
+        it('should detect Logos Chicago citation with markdown link', () => {
+            const chicago = 'Bruce K. Waltke, [_OT300 Old Testament Theology_](https://ref.ly/logosres/ot300waltke?art=art1067&off=833&ctx=lly%2c+both+together.%0a~And+now+we%E2%80%99re+lookin), Logos Mobile Education (Bellingham, WA: Lexham Press, 2018).';
+            expect(detectCitationFormat(chicago)).toBe('chicago');
+        });
+
+        it('should detect Logos MLA citation with markdown link', () => {
+            const mla = 'Waltke, Bruce K. [_OT300 Old Testament Theology_](https://ref.ly/logosres/ot300waltke?art=art1067&off=1316&ctx=vs.+Samson%E2%80%99s+Mother%0a~In+this+first+sectio). Lexham Press, 2018.';
+            expect(detectCitationFormat(mla)).toBe('mla');
+        });
+
+        it('should detect Logos APA citation with markdown link', () => {
+            const apa = 'Waltke, B. K. (2018). [_OT300 Old Testament Theology_](https://ref.ly/logosres/ot300waltke). Lexham Press.';
+            expect(detectCitationFormat(apa)).toBe('apa');
+        });
     });
 
     describe('parseBibtex', () => {
@@ -86,6 +102,19 @@ describe('Clipboard Parser', () => {
             expect(result.citeKey).toContain('smith');
             expect(result.citeKey).toContain('2020');
         });
+
+        it('should parse Logos MLA citation with markdown link', () => {
+            const mla = 'Waltke, Bruce K. [_OT300 Old Testament Theology_](https://ref.ly/logosres/ot300waltke?art=art1067&off=1316&ctx=vs.+Samson%E2%80%99s+Mother%0a~In+this+first+sectio). Lexham Press, 2018.';
+            const result = parseMLA(mla);
+
+            expect(result.format).toBe('mla');
+            expect(result.author).toBe('Waltke, Bruce K');
+            expect(result.title).toBe('OT300 Old Testament Theology');
+            expect(result.year).toBe('2018');
+            expect(result.publisher).toBe('Lexham Press');
+            expect(result.url).toContain('ref.ly');
+            expect(result.citeKey).toBe('waltke-2018');
+        });
     });
 
     describe('parseAPA', () => {
@@ -97,6 +126,25 @@ describe('Clipboard Parser', () => {
             expect(result.year).toBe('2020');
             expect(result.citeKey).toContain('smith');
         });
+
+        it('should parse Logos APA citation with markdown link', () => {
+            const apa = 'Waltke, B. K. (2018). [_OT300 Old Testament Theology_](https://ref.ly/logosres/ot300waltke). Lexham Press.';
+            const result = parseAPA(apa);
+
+            expect(result.format).toBe('apa');
+            expect(result.author).toBe('Waltke, B. K.');
+            expect(result.title).toBe('OT300 Old Testament Theology');
+            expect(result.year).toBe('2018');
+            expect(result.url).toContain('ref.ly');
+        });
+
+        it('should correctly parse author without capturing preceding text', () => {
+            const apa = 'Author, A. B. (2020). Title here. Publisher.';
+            const result = parseAPA(apa);
+
+            expect(result.author).toBe('Author, A. B.');
+            expect(result.title).toBe('Title here');
+        });
     });
 
     describe('parseChicago', () => {
@@ -107,6 +155,18 @@ describe('Clipboard Parser', () => {
             expect(result.format).toBe('chicago');
             expect(result.year).toBe('2020');
             expect(result.author).toBe('Smith, John');
+        });
+
+        it('should parse Logos Chicago citation with markdown link', () => {
+            const chicago = 'Bruce K. Waltke, [_OT300 Old Testament Theology_](https://ref.ly/logosres/ot300waltke?art=art1067&off=833&ctx=lly%2c+both+together.%0a~And+now+we%E2%80%99re+lookin), Logos Mobile Education (Bellingham, WA: Lexham Press, 2018).';
+            const result = parseChicago(chicago);
+
+            expect(result.format).toBe('chicago');
+            expect(result.author).toBe('Bruce K. Waltke');
+            expect(result.title).toBe('OT300 Old Testament Theology');
+            expect(result.year).toBe('2018');
+            expect(result.publisher).toBe('Lexham Press');
+            expect(result.url).toContain('ref.ly');
         });
     });
 
@@ -278,25 +338,169 @@ Third line.
         });
     });
 
-    describe('cleanFormattedText', () => {
-        it('should convert single underscores to asterisks', () => {
-            const input = 'This is _italic_ text.';
-            expect(cleanFormattedText(input)).toBe('This is *italic* text.');
+    describe('User-provided Examples', () => {
+        describe('APA Examples', () => {
+            it('should parse APA Example 1: Miller', () => {
+                const text = 'Miller, A. J. (2018). The silicon horizon: A history of computing. North Press.';
+                const result = parseAPA(text);
+                expect(result.author).toBe('Miller, A. J.');
+                expect(result.year).toBe('2018');
+                expect(result.title).toBe('The silicon horizon: A history of computing');
+                expect(result.publisher).toBe('North Press');
+            });
+
+            it('should parse APA Example 2: Garcia & Chen (edition)', () => {
+                const text = 'García, M. L., & Chen, W. (2022). Urban echoes: Sociology of the modern city (2nd ed.). Riverbank Publishing.';
+                const result = parseAPA(text);
+                expect(result.author).toBe('García, M. L., & Chen, W.');
+                expect(result.year).toBe('2022');
+                expect(result.title).toContain('Urban echoes');
+                expect(result.publisher).toBe('Riverbank Publishing');
+            });
+
+            it('should parse APA Example 3: Vance', () => {
+                const text = 'Vance, S. R. (2015). Principles of organic chemistry. Academic Media Group.';
+                const result = parseAPA(text);
+                expect(result.author).toBe('Vance, S. R.');
+                expect(result.year).toBe('2015');
+                expect(result.title).toBe('Principles of organic chemistry');
+                expect(result.publisher).toBe('Academic Media Group');
+            });
         });
 
-        it('should convert double underscores to superscripts', () => {
-            const input = 'This is __bold__ text.';
-            expect(cleanFormattedText(input)).toBe('This is <sup>bold</sup> text.');
+        describe('MLA Examples', () => {
+            it('should parse MLA Example 1: Miller', () => {
+                const text = 'Miller, Arthur J. _The Silicon Horizon: A History of Computing_. North Press, 2018.';
+                const result = parseMLA(text);
+                expect(result.author).toBe('Miller, Arthur J');
+                expect(result.title).toContain('The Silicon Horizon');
+                expect(result.publisher).toBe('North Press');
+                expect(result.year).toBe('2018');
+            });
+
+            it('should parse MLA Example 2: Garcia & Chen', () => {
+                const text = 'García, Maria L., and Wei Chen. _Urban Echoes: Sociology of the Modern City_. 2nd ed., Riverbank Publishing, 2022.';
+                const result = parseMLA(text);
+                expect(result.author).toBe('García, Maria L., and Wei Chen');
+                expect(result.title).toContain('Urban Echoes');
+                expect(result.publisher).toBe('Riverbank Publishing');
+                expect(result.year).toBe('2022');
+            });
+
+            it('should parse MLA Example 3: Vance', () => {
+                const text = 'Vance, Sarah R. _Principles of Organic Chemistry_. Academic Media Group, 2015.';
+                const result = parseMLA(text);
+                expect(result.author).toBe('Vance, Sarah R');
+                expect(result.title).toContain('Principles of Organic Chemistry');
+                expect(result.publisher).toBe('Academic Media Group');
+                expect(result.year).toBe('2015');
+            });
         });
 
-        it('should leave double asterisks as they are', () => {
-            const input = 'This is **bold** text.';
-            expect(cleanFormattedText(input)).toBe('This is **bold** text.');
+        describe('BibTeX Examples', () => {
+            it('should parse BibTeX Example 1: Miller', () => {
+                const text = `@book{miller2018silicon,
+  author    = {Arthur J. Miller},
+  title     = {The Silicon Horizon: A History of Computing},
+  publisher = {North Press},
+  year      = {2018},
+  address   = {Seattle}
+}`;
+                const result = parseBibtex(text);
+                expect(result.citeKey).toBe('miller2018silicon');
+                expect(result.author).toBe('Arthur J. Miller');
+                expect(result.title).toBe('The Silicon Horizon: A History of Computing');
+                expect(result.year).toBe('2018');
+                expect(result.publisher).toBe('North Press');
+            });
+
+            it('should parse BibTeX Example 2: Garcia & Chen', () => {
+                const text = `@book{garcia2022urban,
+  author    = {Maria L. García and Wei Chen},
+  title     = {Urban Echoes: Sociology of the Modern City},
+  publisher = {Riverbank Publishing},
+  year      = {2022},
+  edition   = {2nd}
+}`;
+                const result = parseBibtex(text);
+                expect(result.citeKey).toBe('garcia2022urban');
+                expect(result.author).toBe('Maria L. García and Wei Chen');
+                expect(result.title).toBe('Urban Echoes: Sociology of the Modern City');
+                expect(result.year).toBe('2022');
+                expect(result.publisher).toBe('Riverbank Publishing');
+            });
+
+            it('should parse BibTeX Example 3: Vance', () => {
+                const text = `@book{vance2015organic,
+  author    = {Sarah R. Vance},
+  title     = {Principles of Organic Chemistry},
+  publisher = {Academic Media Group},
+  year      = {2015}
+}`;
+                const result = parseBibtex(text);
+                expect(result.citeKey).toBe('vance2015organic');
+                expect(result.author).toBe('Sarah R. Vance');
+                expect(result.title).toBe('Principles of Organic Chemistry');
+                expect(result.year).toBe('2015');
+                expect(result.publisher).toBe('Academic Media Group');
+            });
         });
 
-        it('should handle multiple formats in one string', () => {
-            const input = 'The _quick_ brown fox __jumps__ over the **lazy** dog.';
-            expect(cleanFormattedText(input)).toBe('The *quick* brown fox <sup>jumps</sup> over the **lazy** dog.');
+        describe('Chicago Examples', () => {
+            it('should parse Chicago Example 1: Miller', () => {
+                const text = 'Miller, Arthur J. _The Silicon Horizon: A History of Computing_. Seattle: North Press, 2018.';
+                const result = parseChicago(text);
+                expect(result.author).toBe('Miller, Arthur J');
+                expect(result.title).toContain('The Silicon Horizon');
+                expect(result.publisher).toBe('North Press');
+                expect(result.year).toBe('2018');
+            });
+
+            it('should parse Chicago Example 2: Garcia & Chen', () => {
+                const text = 'García, Maria L., and Wei Chen. _Urban Echoes: Sociology of the Modern City_. 2nd ed. Chicago: Riverbank Publishing, 2022.';
+                const result = parseChicago(text);
+                expect(result.author).toBe('García, Maria L., and Wei Chen');
+                expect(result.title).toContain('Urban Echoes');
+                expect(result.publisher).toBe('Riverbank Publishing');
+                expect(result.year).toBe('2022');
+            });
+
+            it('should parse Chicago Example 3: Vance', () => {
+                const text = 'Vance, Sarah R. _Principles of Organic Chemistry_. New York: Academic Media Group, 2015.';
+                const result = parseChicago(text);
+                expect(result.author).toBe('Vance, Sarah R');
+                expect(result.title).toContain('Principles of Organic Chemistry');
+                expect(result.publisher).toBe('Academic Media Group');
+                expect(result.year).toBe('2015');
+            });
+        });
+
+        describe('Text + Citation Combinations', () => {
+            it('should split Text + MLA Citation correctly', () => {
+                const clipboard = `And now we’re looking at the book of Kings [and] the book of Samuel, where [there were] these tremendous crosses of fates we talked about—from a tent to a temple, from warlords to eternal kingship, from a loosely confederated league of tribes to an imperial power. And we looked at the outline of the book—the crossing of fates regarding Samuel, the crossing of fates of Saul and David, [and] then the rise of David, the demise of David, and the appendix.
+
+Waltke, Bruce K. OT300 Old Testament Theology. Lexham Press, 2018.`;
+                const result = parseLogosClipboard(clipboard);
+                expect(result.mainText).toContain('And now we’re looking at the book of Kings');
+                expect(result.mainText).toContain('the appendix.');
+                expect(result.citation).not.toBeNull();
+                expect(result.citation?.author).toBe('Waltke, Bruce K');
+                expect(result.citation?.title).toBe('OT300 Old Testament Theology');
+            });
+
+            it('should split Text + APA Citation correctly', () => {
+                const clipboard = `God, in His grace, appears to Manoah’s wife—[through] an angel of the Lord [or] revelation—and promises her a child. When you come to Hannah, there’s no revelation at all. Manoah’s wife, however, is resigned to her barrenness. She has no prayer. She has no praise. Hannah is quite different. She wants a child; she wants a son, and she’s provoked
+
+Waltke, B. K. (2018). OT300 Old Testament Theology. Lexham Press.`;
+                const result = parseLogosClipboard(clipboard);
+                expect(result.mainText).toContain('God, in His grace');
+                expect(result.mainText).toContain('she’s provoked');
+                expect(result.citation).not.toBeNull();
+                expect(result.citation?.author).toBe('Waltke, B. K.');
+                expect(result.citation?.year).toBe('2018');
+                expect(result.citation?.title).toBe('OT300 Old Testament Theology');
+            });
         });
     });
 });
+

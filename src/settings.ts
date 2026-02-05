@@ -86,17 +86,7 @@ export class CitationPluginSettingTab extends PluginSettingTab {
                     })
             );
 
-        new Setting(this.containerEl)
-            .setName("Include resource link")
-            .setDesc("When enabled, the ref.ly hyperlink will be included above the note link")
-            .addToggle((toggle) =>
-                toggle
-                    .setValue(this.plugin.settings.includeReflyLink)
-                    .onChange(async (value) => {
-                        this.plugin.settings.includeReflyLink = value;
-                        await this.plugin.saveSettings();
-                    })
-            );
+
 
         new Setting(this.containerEl)
             .setName("Use custom metadata")
@@ -232,6 +222,18 @@ export class CitationPluginSettingTab extends PluginSettingTab {
         logosSection.createEl('summary', { text: 'Logos specific settings' });
 
         const logosSectionContent = logosSection.createDiv({ cls: 'logos-settings-content' });
+
+        new Setting(logosSectionContent)
+            .setName("Logos resource link")
+            .setDesc("When enabled, includes the ref.ly hyperlink above the note link in callouts")
+            .addToggle((toggle) =>
+                toggle
+                    .setValue(this.plugin.settings.includeReflyLink)
+                    .onChange(async (value) => {
+                        this.plugin.settings.includeReflyLink = value;
+                        await this.plugin.saveSettings();
+                    })
+            );
 
         new Setting(logosSectionContent)
             .setName("Auto-detect bible verses")

@@ -22,6 +22,30 @@ export function detectCitationFormat(text: string): CitationFormat {
         return 'bibtex';
     }
 
+    // Check for Logos-style markdown links in titles: [_Title_](url) or [*Title*](url)
+    const hasMarkdownLink = /\[[\*_][^\]]+[\*_]\]\([^)]+\)/.test(trimmed);
+
+    if (hasMarkdownLink) {
+        // Chicago/Turabian with markdown link: Author, [_Title_](...), Series (Place: Publisher, Year).
+        // Key pattern: parenthetical with "Place: Publisher, Year" or just "(Publisher, Year)"
+        if (/\([^)]*:\s*[^,)]+,\s*\d{4}\)/.test(trimmed) || /,\s*\d{4}\)\.$/.test(trimmed)) {
+            return 'chicago';
+        }
+
+        // MLA with markdown link: Author. [_Title_](...). Publisher, Year.
+        // Key pattern: ends with "Publisher, Year." (no parentheses around year)
+        if (/\]\([^)]+\)\.\s+[^,]+,\s*\d{4}\.?\s*$/.test(trimmed)) {
+            return 'mla';
+        }
+
+        // APA with markdown link: Author (Year). [_Title_](...). Publisher.
+        if (/\(\d{4}\)\.\s*\[/.test(trimmed)) {
+            return 'apa';
+        }
+    }
+
+    // Standard format detection (no markdown links)
+
     // APA: Author, A. A. (Year). Title. Publisher. OR Author (Year)
     // Look for pattern: Name, Initial. (YYYY)
     if (/[A-Z][a-z]+,\s+[A-Z]\.\s*[A-Z]?\.\s*\(\d{4}\)/.test(trimmed)) {
@@ -30,19 +54,20 @@ export function detectCitationFormat(text: string): CitationFormat {
 
     // Chicago: Author. Title. Place: Publisher, Year.
     // Look for pattern with place: publisher (check before MLA since it's more specific)
-    if (/[A-Z][a-z]+,\s+[A-Z][a-z]+\.\s+[^.]+\.\s+[^:]+:\s+[^,]+,\s+\d{4}/.test(trimmed)) {
+    if (/[A-Z][a-z]+,\s+[A-Z][a-z]+\.?\s+[^.]+\.\s+[^:]+:\s+[^,]+,\s+\d{4}/.test(trimmed)) {
         return 'chicago';
     }
 
     // MLA: Author. Title. Publisher, Year.
     // Look for pattern ending with publisher and year
-    if (/[A-Z][a-z]+,\s+[A-Z][a-z]+\.\s+[^.]+\.\s+[^,]+,\s+\d{4}\.?$/.test(trimmed)) {
+    if (/[A-Z][a-z]+,\s+[A-Z][a-z]+\.?\s+[^.]+\.\s+[^,]+,\s+\d{4}\.?$/.test(trimmed)) {
         return 'mla';
     }
 
     // Default to bibtex if we can't detect (since that's what Logos exports)
     return 'bibtex';
 }
+
 
 /**
  * Parses a BibTeX entry into a ParsedCitation
@@ -81,21 +106,70 @@ export function parseBibtex(bibtex: string): ParsedCitation {
 /**
  * Parses an MLA citation into a ParsedCitation
  * Format: LastName, FirstName. Title. Publisher, Year.
+ * Also handles Logos format: Author. [_Title_](url). Publisher, Year.
  */
 export function parseMLA(text: string): ParsedCitation {
     const lines = text.trim().split('\n');
     const citation = lines.join(' ').trim();
 
-    // Try to extract: Author. "Title." Container, Publisher, Year.
-    const authorMatch = citation.match(/^([^.]+)\./);
-    const titleMatch = citation.match(/\.\s*"?([^."]+)"?\./);
-    const yearMatch = citation.match(/(\d{4})\.?$/);
-    const publisherMatch = citation.match(/\.\s*([^,]+),\s*\d{4}/);
+    let author: string | null = null;
+    let title: string | null = null;
+    let url: string | null = null;
+    let year: string | null = null;
+    let publisher: string | null = null;
 
-    const author = authorMatch ? authorMatch[1].trim() : null;
-    const title = titleMatch ? titleMatch[1].trim() : null;
-    const year = yearMatch ? yearMatch[1] : null;
-    const publisher = publisherMatch ? publisherMatch[1].trim() : null;
+    // Check for Logos-style markdown link: [_Title_](url) or [*Title*](url)
+    const markdownLinkMatch = citation.match(/\[[\*_]([^\]]+)[\*_]\]\(([^)]+)\)/);
+
+    if (markdownLinkMatch) {
+        // Logos format: Author. [_Title_](url). Publisher, Year.
+        title = markdownLinkMatch[1].trim();
+        url = markdownLinkMatch[2];
+
+        // Author is everything before the markdown link, up to the first period or comma before the link
+        const beforeLink = citation.substring(0, citation.indexOf('['));
+        const authorMatch = beforeLink.match(/^([^.]+(?:\.\s*[A-Z]\.)?)/);
+        author = authorMatch ? authorMatch[1].replace(/,?\s*$/, '').trim() : null;
+
+        // Publisher and year are after the link
+        const afterLink = citation.substring(citation.indexOf(')') + 1);
+        const pubYearMatch = afterLink.match(/\.\s*([^,]+),\s*(\d{4})/);
+        if (pubYearMatch) {
+            publisher = pubYearMatch[1].trim();
+            year = pubYearMatch[2];
+        }
+    } else {
+        // Standard MLA format
+        // Heuristic: Titles are often italicized or quoted
+        const titleRegex = /[_*"]([^_*"]+)[_*"]/;
+        const titleMatch = citation.match(titleRegex);
+
+        if (titleMatch) {
+            title = titleMatch[1].trim();
+            const titleStart = citation.indexOf(titleMatch[0]);
+            author = citation.substring(0, titleStart).replace(/\.?\s*$/, '').trim();
+
+            const afterTitle = citation.substring(titleStart + titleMatch[0].length).trim();
+            const yearMatch = afterTitle.match(/(\d{4})\.?$/);
+            year = yearMatch ? yearMatch[1] : null;
+
+            // Publisher is everything after the title except the year, usually separated by a comma
+            let pubRaw = afterTitle.replace(/^[.,\s]+/, '').replace(/,?\s*\d{4}\.?$/, '').trim();
+            // Remove edition info like "2nd ed.,"
+            publisher = pubRaw.replace(/^[^,]+ed\.,\s*/i, '').trim();
+        } else {
+            // Fallback for very simple formats
+            const authorMatch = citation.match(/^([^.]+)\./);
+            const titleMatch = citation.match(/\.\s*"?([^."]+)"?\./);
+            const yearMatch = citation.match(/(\d{4})\.?$/);
+            const publisherMatch = citation.match(/\.\s*([^,]+),\s*\d{4}/);
+
+            author = authorMatch ? authorMatch[1].trim() : null;
+            title = titleMatch ? titleMatch[1].trim() : null;
+            year = yearMatch ? yearMatch[1] : null;
+            publisher = publisherMatch ? publisherMatch[1].trim() : null;
+        }
+    }
 
     // Generate cite key from author and year
     const citeKey = author && year
@@ -110,7 +184,7 @@ export function parseMLA(text: string): ParsedCitation {
         year,
         pages: null,
         publisher,
-        url: null,
+        url,
         rawCitation: citation,
     };
 }
@@ -118,26 +192,79 @@ export function parseMLA(text: string): ParsedCitation {
 /**
  * Parses an APA citation into a ParsedCitation
  * Format: Author, A. A. (Year). Title. Publisher.
+ * Also handles Logos format: Author (Year). [_Title_](url). Publisher.
  */
 export function parseAPA(text: string): ParsedCitation {
     const lines = text.trim().split('\n');
     const citation = lines.join(' ').trim();
 
-    // Try to extract: Author, I. (Year). Title. Publisher.
-    const authorMatch = citation.match(/^([^(]+)\s*\(/);
-    const yearMatch = citation.match(/\((\d{4})\)/);
-    const titleMatch = citation.match(/\)\.\s*([^.]+)\./);
-    const publisherMatch = citation.match(/\)\.\s*[^.]+\.\s*([^.]+)\./);
+    let author: string | null = null;
+    let title: string | null = null;
+    let url: string | null = null;
+    let year: string | null = null;
+    let publisher: string | null = null;
 
-    const author = authorMatch ? authorMatch[1].trim() : null;
-    const title = titleMatch ? titleMatch[1].trim() : null;
-    const year = yearMatch ? yearMatch[1] : null;
-    const publisher = publisherMatch ? publisherMatch[1].trim() : null;
+    // Check for Logos-style markdown link: [_Title_](url) or [*Title*](url)
+    const markdownLinkMatch = citation.match(/\[[\*_]([^\]]+)[\*_]\]\(([^)]+)\)/);
+
+    if (markdownLinkMatch) {
+        // Logos APA format: Author (Year). [_Title_](url). Publisher.
+        title = markdownLinkMatch[1].trim();
+        url = markdownLinkMatch[2];
+
+        // Year is in parentheses before the title
+        const yearMatch = citation.match(/\((\d{4})\)/);
+        year = yearMatch ? yearMatch[1] : null;
+
+        // Author is everything before "(Year)"
+        const yearIndex = citation.indexOf('(');
+        if (yearIndex > 0) {
+            author = citation.substring(0, yearIndex).replace(/,$/, '').trim();
+        }
+
+        // Publisher is after the markdown link closing
+        const afterLink = citation.substring(citation.lastIndexOf(')') + 1);
+        const publisherMatch = afterLink.match(/\.\s*([^.]+)\./);
+        if (publisherMatch) {
+            publisher = publisherMatch[1].trim();
+        }
+    } else {
+        // Standard APA format: Author, I. (Year). Title. Publisher.
+        const yearMatch = citation.match(/\((\d{4})\)/);
+        year = yearMatch ? yearMatch[1] : null;
+
+        // Author is before the year
+        const yearIndex = citation.indexOf('(');
+        if (yearIndex > 0) {
+            author = citation.substring(0, yearIndex).replace(/,$/, '').trim();
+        }
+
+        const afterYear = yearIndex > 0 ? citation.substring(citation.indexOf(')', yearIndex) + 1).trim() : citation;
+        // Format: . Title. Publisher.
+        const titleRegex = /[_*"]([^_*"]+)[_*"]/;
+        const titleMatch = afterYear.match(titleRegex);
+
+        if (titleMatch) {
+            title = titleMatch[1].trim();
+            const afterTitle = afterYear.substring(afterYear.indexOf(titleMatch[0]) + titleMatch[0].length).trim();
+            publisher = afterTitle.replace(/^[.,\s(]+[^)]*\)[.,\s]*/, '').replace(/\.$/, '').trim();
+        } else {
+            const parts = afterYear.replace(/^\.\s*/, '').split(/\.\s+/);
+            if (parts.length >= 1) {
+                title = parts[0].trim();
+                if (parts.length >= 2) {
+                    publisher = parts[1].replace(/\.$/, '').trim();
+                }
+            }
+        }
+    }
 
     // Generate cite key from author last name and year
     let citeKey = 'unknown';
     if (author && year) {
-        const lastName = author.split(',')[0].trim().toLowerCase().replace(/\s+/g, '-');
+        // Handle multiple authors or names with punctuation
+        const firstAuthor = author.split(/[&,]|and/)[0].trim();
+        const lastName = firstAuthor.split(/\s+/).pop()?.toLowerCase().replace(/[^\w]/g, '') || 'unknown';
         citeKey = `${lastName}-${year}`;
     }
 
@@ -149,7 +276,7 @@ export function parseAPA(text: string): ParsedCitation {
         year,
         pages: null,
         publisher,
-        url: null,
+        url,
         rawCitation: citation,
     };
 }
@@ -157,26 +284,90 @@ export function parseAPA(text: string): ParsedCitation {
 /**
  * Parses a Chicago citation into a ParsedCitation
  * Format: Author. Title. Place: Publisher, Year.
+ * Also handles Logos format: Author, [_Title_](url), Series (Place: Publisher, Year).
  */
 export function parseChicago(text: string): ParsedCitation {
     const lines = text.trim().split('\n');
     const citation = lines.join(' ').trim();
 
-    // Try to extract: Author. Title. Place: Publisher, Year.
-    const authorMatch = citation.match(/^([^.]+)\./);
-    const titleMatch = citation.match(/\.\s*([^.]+)\.\s*[^:]+:/);
-    const yearMatch = citation.match(/,\s*(\d{4})\.?$/);
-    const publisherMatch = citation.match(/:\s*([^,]+),\s*\d{4}/);
+    let author: string | null = null;
+    let title: string | null = null;
+    let url: string | null = null;
+    let year: string | null = null;
+    let publisher: string | null = null;
 
-    const author = authorMatch ? authorMatch[1].trim() : null;
-    const title = titleMatch ? titleMatch[1].trim() : null;
-    const year = yearMatch ? yearMatch[1] : null;
-    const publisher = publisherMatch ? publisherMatch[1].trim() : null;
+    // Check for Logos-style markdown link: [_Title_](url) or [*Title*](url)
+    const markdownLinkMatch = citation.match(/\[[\*_]([^\]]+)[\*_]\]\(([^)]+)\)/);
+
+    if (markdownLinkMatch) {
+        // Logos Chicago format: Author, [_Title_](url), Series (Place: Publisher, Year).
+        title = markdownLinkMatch[1].trim();
+        url = markdownLinkMatch[2];
+
+        // Author is everything before the markdown link (before the comma or just before the bracket)
+        const beforeLink = citation.substring(0, citation.indexOf('['));
+        // Remove trailing comma and whitespace
+        author = beforeLink.replace(/,?\s*$/, '').trim();
+
+        // Year is typically at the end: (Place: Publisher, Year) or just , Year)
+        const yearMatch = citation.match(/,\s*(\d{4})\)\.?\s*$/) || citation.match(/,\s*(\d{4})\.?\s*$/);
+        year = yearMatch ? yearMatch[1] : null;
+
+        // Publisher is in parentheses: (Place: Publisher, Year) - extract "Publisher"
+        // Or just after colon: Place: Publisher, Year
+        const publisherMatch = citation.match(/:\s*([^,)]+),\s*\d{4}/);
+        if (publisherMatch) {
+            publisher = publisherMatch[1].trim();
+        }
+    } else {
+        // Standard Chicago format: Author. Title. Place: Publisher, Year.
+
+        // Heuristic: Use Title boundaries if possible
+        const titleRegex = /[_*"]([^_*"]+)[_*"]/;
+        const titleMatch = citation.match(titleRegex);
+
+        if (titleMatch) {
+            title = titleMatch[1].trim();
+            const titleStart = citation.indexOf(titleMatch[0]);
+            author = citation.substring(0, titleStart).replace(/\.?\s*$/, '').trim();
+
+            const afterTitle = citation.substring(titleStart + titleMatch[0].length).trim();
+            const yearMatch = afterTitle.match(/,\s*(\d{4})\.?$/);
+            year = yearMatch ? yearMatch[1] : null;
+
+            // Publisher is after the LAST colon in Chicago style
+            if (afterTitle.includes(':')) {
+                const parts = afterTitle.split(':');
+                const lastPart = parts[parts.length - 1].trim();
+                publisher = lastPart.replace(/,\s*\d{4}\.?$/, '').trim();
+            } else {
+                publisher = afterTitle.replace(/^[.,\s]+/, '').replace(/,?\s*\d{4}\.?$/, '').trim();
+            }
+            // Filter out edition notes like "2nd ed." from publisher
+            if (publisher) {
+                publisher = publisher.replace(/^[^,]*ed\.\s*/i, '').replace(/^[.,\s]+/, '').trim();
+            }
+        } else {
+            const parts = citation.split(/\.\s+(?=[A-Z][a-z])/);
+            author = parts[0].trim();
+            if (parts.length > 1) title = parts[1].trim();
+
+            const yearMatch = citation.match(/,\s*(\d{4})\.?$/);
+            year = yearMatch ? yearMatch[1] : null;
+
+            const colons = citation.split(':');
+            if (colons.length > 1) {
+                publisher = colons[colons.length - 1].replace(/,\s*\d{4}\.?$/, '').trim();
+            }
+        }
+    }
+
 
     // Generate cite key from author and year
     let citeKey = 'unknown';
     if (author && year) {
-        const lastName = author.split(',')[0].trim().toLowerCase().replace(/\s+/g, '-');
+        const firstAuthor = author.split(/[&,]|and/)[0].trim();
+        const lastName = firstAuthor.split(/\s+/).pop()?.toLowerCase().replace(/[^\w]/g, '') || 'unknown';
         citeKey = `${lastName}-${year}`;
     }
 
@@ -188,7 +379,7 @@ export function parseChicago(text: string): ParsedCitation {
         year,
         pages: null,
         publisher,
-        url: null,
+        url,
         rawCitation: citation,
     };
 }
@@ -199,72 +390,97 @@ export function parseChicago(text: string): ParsedCitation {
 export function parseLogosClipboard(clipboard: string, preferredFormat: CitationFormat = 'auto'): ParsedClipboard {
     const trimmed = clipboard.trim();
 
-    // Detect format
-    const format = preferredFormat === 'auto' ? detectCitationFormat(trimmed) : preferredFormat;
-
     // Extract ref.ly link if present anywhere in the clipboard
     const reflyRegex = /https?:\/\/ref\.ly\/[^\s)}]+/;
     const reflyMatch = trimmed.match(reflyRegex);
     const reflyLink = reflyMatch ? reflyMatch[0] : null;
 
+    // Detect format
+    const format = preferredFormat === 'auto' ? detectCitationFormat(trimmed) : preferredFormat;
+
+    let mainText = "";
+    let citationText = trimmed;
+
+    // Split text and citation
     if (format === 'bibtex') {
-        return parseBibtexClipboard(trimmed, reflyLink);
+        const parts = trimmed.split(/\s+(?=@[\w]+{)/);
+        if (parts.length >= 2) {
+            mainText = parts[0].trim();
+            citationText = parts[1].trim();
+        } else if (!trimmed.startsWith('@')) {
+            // If it doesn't start with @ and we couldn't split, it might just be text
+            mainText = trimmed;
+            citationText = "";
+        }
+    } else {
+        // For other formats (MLA, APA, Chicago), look for a newline separation
+        // Logos typically puts the citation at the end after one or more newlines
+        const lines = trimmed.split(/\r?\n/);
+
+        // Search from the bottom for something that looks like the start of a citation
+        let citationStartIndex = -1;
+
+        for (let i = lines.length - 1; i >= 0; i--) {
+            const line = lines[i].trim();
+            if (!line) continue;
+
+            // Heuristics for citation start:
+            // APA: Author (Year)
+            // MLA: Author. Title
+            // Chicago: Author. Title
+            const looksLikeCitation =
+                (format === 'apa' && /\(\d{4}\)/.test(line)) ||
+                (format === 'mla' && /[A-Z][a-z]+,?\s+[A-Z]/.test(line) && (line.includes('.') || line.includes('_') || line.includes('*'))) ||
+                (format === 'chicago' && /[A-Z][a-z]+,?\s+[A-Z]/.test(line) && (line.includes('.') || line.includes('_') || line.includes('*')));
+
+            if (looksLikeCitation) {
+                citationStartIndex = i;
+                // Keep looking up in case the citation is multiple lines
+            } else if (citationStartIndex !== -1) {
+                // We were in a citation and now we found something that doesn't look like one
+                break;
+            }
+        }
+
+        if (citationStartIndex > 0) {
+            mainText = lines.slice(0, citationStartIndex).join('\n').trim();
+            citationText = lines.slice(citationStartIndex).join('\n').trim();
+        }
     }
-
-    // For other formats, try to parse the whole thing as a citation
-    let citation: ParsedCitation;
-    switch (format) {
-        case 'mla':
-            citation = parseMLA(trimmed);
-            break;
-        case 'apa':
-            citation = parseAPA(trimmed);
-            break;
-        case 'chicago':
-            citation = parseChicago(trimmed);
-            break;
-        default:
-            citation = parseBibtex(trimmed);
-    }
-
-    return {
-        mainText: '',
-        citation,
-        page: citation.pages,
-        reflyLink,
-    };
-}
-
-/**
- * Parses BibTeX-specific clipboard format (text + bibtex)
- */
-function parseBibtexClipboard(trimmed: string, reflyLink: string | null): ParsedClipboard {
-    // Case 1: Clipboard is just the BibTeX entry
-    if (trimmed.startsWith('@')) {
-        const citation = parseBibtex(trimmed);
-        return { mainText: "", citation, page: citation.pages, reflyLink };
-    }
-
-    // Case 2: Clipboard contains both text and BibTeX
-    const parts = trimmed.split(/\s+(?=@[\w]+{)/);
-
-    if (parts.length < 2) {
-        return { mainText: trimmed, citation: null, page: null };
-    }
-
-    const mainTextRaw = parts[0].trim();
-    const bibtexRaw = parts[1]?.trim() || "";
 
     // Clean mainText by removing the ref.ly link and its container
-    let mainText = mainTextRaw;
-    if (reflyLink && mainTextRaw.includes(reflyLink)) {
+    if (mainText && reflyLink) {
         mainText = mainText.replace(new RegExp(`\\s*\\(?Resource Link:\\s*${reflyLink.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)?`, 'i'), "");
         mainText = mainText.replace(reflyLink, "").trim();
     }
 
-    const citation = parseBibtex(bibtexRaw);
+    // Parse the citation part
+    let citation: ParsedCitation | null = null;
+    if (citationText) {
+        switch (format) {
+            case 'mla':
+                citation = parseMLA(citationText);
+                break;
+            case 'apa':
+                citation = parseAPA(citationText);
+                break;
+            case 'chicago':
+                citation = parseChicago(citationText);
+                break;
+            case 'bibtex':
+                citation = parseBibtex(citationText);
+                break;
+            default:
+                citation = parseBibtex(citationText);
+        }
+    }
 
-    return { mainText: mainText.trim(), citation, page: citation.pages, reflyLink };
+    return {
+        mainText: mainText.trim(),
+        citation,
+        page: citation ? citation.pages : null,
+        reflyLink,
+    };
 }
 
 /**
