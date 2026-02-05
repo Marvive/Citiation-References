@@ -2,17 +2,19 @@
 
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/Marvive/logos-references?style=for-the-badge&sort=semver)
 
-Citation References is a powerful Obsidian plugin for managing citations from multiple sources. Originally based on [logos-refs](https://github.com/joey-kilgore/logos-refs) by Joey Kilgore, this version has been completely overhauled with multi-format support and extensive customization options.
+Citation References is a powerful Obsidian plugin designed to streamline the academic citation and study workflow. While it remains a **first-class tool for Logos Bible Software users**, this version has been completely overhauled to serve as a **general-purpose citation manager** for any academic research.
+
+By generalizing the core parsing engine, the plugin now seamlessly handles citations from web databases, PDF managers, and other library software, ensuring your research notes remain consistent regardless of the source.
 
 ## Features
 
-- **Multi-format citation support**: BibTeX, MLA, APA, and Chicago formats with auto-detection
-- **Logos Bible Software integration**: Seamlessly import references from Logos
-- **Smart metadata storage**: Citation data stored as YAML frontmatter properties
-- **Bible verse linking**: Automatically detect and link Bible verses to Logos (NIV, ESV, NASB, LSB, NLT)
-- **Customizable callouts**: Personalize callout titles and styling
-- **Custom metadata fields**: Add your own properties to citation notes
-- **Formatting preservation**: Italics, bold, and superscript are retained from source
+- **Multi-format citation support**: Agnostic detection of BibTeX, MLA, APA, and Chicago formats from any clipboard source.
+- **Logos Bible Software integration**: Deep integration for Logos users including internal resource linking and biblical language support.
+- **Intelligent Text-Citation splitting**: Automatically separates your quoted highlights from their source citations, supporting generalized heuristics for blank lines and formatting.
+- **Smart metadata storage**: Citation data stored as structured YAML frontmatter properties for easy filtering and dataview integration.
+- **Bible verse linking**: Advanced sequential linking (e.g., "Deut. 19:12; 21:1") with book-awareness and support for multiple translations.
+- **Formatting preservation**: Zero-loss conversion of italics, bold, and superscripts from the source to proper Markdown.
+- **Customizable workflows**: Personalize callouts, metadata fields, and file naming conventions.
 
 ## Example Use
 
