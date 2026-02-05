@@ -84,10 +84,14 @@ export function parseBibtex(bibtex: string): ParsedCitation {
     const publisherMatch = bibtex.match(/publisher\s*=\s*\{([^}]+)\}/i);
     const urlMatch = bibtex.match(/url\s*=\s*\{([^}]+)\}/i);
 
-    // Clean title - remove markdown links
+    // Clean title - remove markdown links (Wait, user wants hyperlinks if possible)
     let title = titleMatch ? titleMatch[1] : null;
-    if (title) {
-        title = title.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+
+    const url = urlMatch ? urlMatch[1] : null;
+
+    // If we have a URL and the title doesn't already have one, wrap it
+    if (url && title && !title.includes('](')) {
+        title = `[${title}](${url})`;
     }
 
     return {
@@ -98,7 +102,7 @@ export function parseBibtex(bibtex: string): ParsedCitation {
         year: yearMatch ? yearMatch[1] : null,
         pages: pagesMatch ? pagesMatch[1] : null,
         publisher: publisherMatch ? publisherMatch[1] : null,
-        url: urlMatch ? urlMatch[1] : null,
+        url: url,
         rawCitation: bibtex,
     };
 }

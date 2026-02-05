@@ -53,9 +53,6 @@ export function generateCitationFrontmatter(citation: ParsedCitation, customFiel
     if (citation.publisher) {
         metadata += `publisher: "${citation.publisher.replace(/"/g, '\\"')}"\n`;
     }
-    if (citation.url) {
-        metadata += `url: "${citation.url}"\n`;
-    }
     metadata += `cite-key: "${citation.citeKey}"\n`;
 
     // Add custom user-defined fields as empty
