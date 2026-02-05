@@ -160,6 +160,9 @@ export default class CitationReferencePlugin extends Plugin {
             quotedTextParts.push(`> `);
             quotedTextParts.push(`> ${resourceLinkText}`);
             quotedTextParts.push(`> `);
+        } else {
+            // If neither citation nor resource link, add a newline before the note link
+            quotedTextParts.push(`> `);
         }
 
         const linkAlias = `${noteName}${pageLabel}`;
