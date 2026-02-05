@@ -53,14 +53,14 @@ export function detectCitationFormat(text: string): CitationFormat {
     }
 
     // Chicago: Author. Title. Place: Publisher, Year.
-    // Look for pattern with place: publisher (check before MLA since it's more specific)
-    if (/[A-Z][a-z]+,\s+[A-Z][a-z]+\.?\s+[^.]+\.\s+[^:]+:\s+[^,]+,\s+\d{4}/.test(trimmed)) {
+    // Look for pattern with place: publisher, year (colon followed by non-period, comma, year)
+    if (/[A-Z][a-z]+,?\s+[A-Z].*?\.\s+.*?\.\s+.*?:\s*[^.]+,?\s*\d{4}/.test(trimmed)) {
         return 'chicago';
     }
 
     // MLA: Author. Title. Publisher, Year.
-    // Look for pattern ending with publisher and year
-    if (/[A-Z][a-z]+,\s+[A-Z][a-z]+\.?\s+[^.]+\.\s+[^,]+,\s+\d{4}\.?$/.test(trimmed)) {
+    // Look for pattern with Author, Title, Publisher, Year (with optional pages)
+    if (/[A-Z][a-z]+,?\s+[A-Z].*?\.\s+.*?\.\s+.*,\s+\d{4}/.test(trimmed)) {
         return 'mla';
     }
 
@@ -159,9 +159,11 @@ export function parseMLA(text: string): ParsedCitation {
             publisher = pubRaw.replace(/^[^,]+ed\.,\s*/i, '').trim();
         } else {
             // Fallback for very simple formats
-            const authorMatch = citation.match(/^([^.]+)\./);
+            // Author usually ends with a period followed by a word that doesn't look like an initial
+            const authorMatch = citation.match(/^(.+?)\.(?=\s+[A-Z][A-Za-z\d]+(?!\.))/) || citation.match(/^([^.]+)\./);
             const titleMatch = citation.match(/\.\s*"?([^."]+)"?\./);
-            const yearMatch = citation.match(/(\d{4})\.?$/);
+            // Year: 4 digits, possibly preceded by comma/space, possibly followed by punctuation
+            const yearMatch = citation.match(/(\d{4})[.,]?$/) || citation.match(/(\d{4})/);
             const publisherMatch = citation.match(/\.\s*([^,]+),\s*\d{4}/);
 
             author = authorMatch ? authorMatch[1].trim() : null;
@@ -348,16 +350,20 @@ export function parseChicago(text: string): ParsedCitation {
                 publisher = publisher.replace(/^[^,]*ed\.\s*/i, '').replace(/^[.,\s]+/, '').trim();
             }
         } else {
-            const parts = citation.split(/\.\s+(?=[A-Z][a-z])/);
-            author = parts[0].trim();
-            if (parts.length > 1) title = parts[1].trim();
+            // Author usually ends with a period followed by a word that doesn't look like an initial
+            const authorMatch = citation.match(/^(.+?)\.(?=\s+[A-Z][A-Za-z\d]+(?!\.))/) || citation.match(/^([^.]+)\./);
+            author = authorMatch ? authorMatch[1].trim() : citation.split(/\.\s+/)[0].trim();
 
-            const yearMatch = citation.match(/,\s*(\d{4})\.?$/);
+            // Try to extract title - everything between author and publisher/year
+            const afterAuthor = authorMatch ? citation.substring(authorMatch[0].length).trim() : citation.substring(author.length + 1).trim();
+            title = afterAuthor.split(/\.\s+|(?=Place:)/)[0].trim();
+
+            const yearMatch = citation.match(/,\s*(\d{4})[.,]?$/) || citation.match(/(\d{4})/);
             year = yearMatch ? yearMatch[1] : null;
 
             const colons = citation.split(':');
             if (colons.length > 1) {
-                publisher = colons[colons.length - 1].replace(/,\s*\d{4}\.?$/, '').trim();
+                publisher = colons[colons.length - 1].replace(/,?\s*\d{4}[.,]?$/, '').trim();
             }
         }
     }
@@ -391,9 +397,15 @@ export function parseLogosClipboard(clipboard: string, preferredFormat: Citation
     const trimmed = clipboard.trim();
 
     // Extract ref.ly link if present anywhere in the clipboard
+    // Refined regex to avoid capturing trailing punctuation that isn't part of the URL
     const reflyRegex = /https?:\/\/ref\.ly\/[^\s)}]+/;
     const reflyMatch = trimmed.match(reflyRegex);
-    const reflyLink = reflyMatch ? reflyMatch[0] : null;
+    let reflyLink = reflyMatch ? reflyMatch[0] : null;
+
+    // Remove trailing backslash or other unwanted punctuation if present
+    if (reflyLink) {
+        reflyLink = reflyLink.replace(/[\\.,;!]+$/, '');
+    }
 
     // Detect format
     const format = preferredFormat === 'auto' ? detectCitationFormat(trimmed) : preferredFormat;
@@ -422,7 +434,13 @@ export function parseLogosClipboard(clipboard: string, preferredFormat: Citation
 
         for (let i = lines.length - 1; i >= 0; i--) {
             const line = lines[i].trim();
-            if (!line) continue;
+            if (!line) {
+                if (citationStartIndex !== -1) {
+                    // We found a gap between citation and text!
+                    break;
+                }
+                continue;
+            }
 
             // Heuristics for citation start:
             // APA: Author (Year)
@@ -454,6 +472,14 @@ export function parseLogosClipboard(clipboard: string, preferredFormat: Citation
         mainText = mainText.replace(reflyLink, "").trim();
     }
 
+    // Extract page number if present (before parsing format-specific fields)
+    let pageFromText: string | null = null;
+    if (citationText) {
+        const { cleanedText, page } = extractPageNumber(citationText);
+        citationText = cleanedText;
+        pageFromText = page;
+    }
+
     // Parse the citation part
     let citation: ParsedCitation | null = null;
     if (citationText) {
@@ -478,7 +504,7 @@ export function parseLogosClipboard(clipboard: string, preferredFormat: Citation
     return {
         mainText: mainText.trim(),
         citation,
-        page: citation ? citation.pages : null,
+        page: pageFromText || (citation ? citation.pages : null),
         reflyLink,
     };
 }
@@ -499,7 +525,9 @@ export function extractCiteKey(bibtex: string): string {
  * Extracts page number from text (typically at the end of a citation)
  */
 export function extractPageNumber(text: string): { cleanedText: string, page: string | null } {
-    const pageRegex = /[([ ]?(p{1,2}\.? ?\d+([–-]\d+)?)[)\]]?\.?$/i;
+    // Match common page patterns at the end of a citation
+    // Added comma and space to the leading character class to clean the remaining string better
+    const pageRegex = /[([ ,]?(p{1,2}\.? ?\d+([–-]\d+)?)[)\]]?\.?$/i;
     const match = text.match(pageRegex);
     if (match) {
         const page = match[1];

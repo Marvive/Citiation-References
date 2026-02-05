@@ -79,7 +79,11 @@ export default class CitationReferencePlugin extends Plugin {
                     if (!reflyLink && parsedMarkdown.reflyLink) {
                         reflyLink = parsedMarkdown.reflyLink;
                     }
+                    if (reflyLink) {
+                        reflyLink = reflyLink.replace(/[\\.,;]+$/, '');
+                    }
                     break;
+
                 }
             }
         } catch (e) {

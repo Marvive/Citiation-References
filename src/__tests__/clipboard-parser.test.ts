@@ -488,6 +488,20 @@ Waltke, Bruce K. OT300 Old Testament Theology. Lexham Press, 2018.`;
                 expect(result.citation?.title).toBe('OT300 Old Testament Theology');
             });
 
+            it('should split Text + Complex MLA Citation with page number correctly', () => {
+                const clipboard = `The narrator lays the foundation for Judah’s leadership, from whom David will spring, not Benjamin’s, from whom Saul comes, by framing his book with I AM’s divine appointment of Judah to lead the other tribes in battle (Judg. 1:2; 20:18). The narrator has little good to say about Benjamin. In addition, by the framing epilogue—“In those days Israel had no king [they had warlords and Levites]; everyone did as he saw fit” (17:6; 21:25)—he lays the foundation for covenant-keeping David, Israel’s great king. David is a prototype of Jesus Christ, who is the only perfect covenant-keeping king.
+
+Waltke, Bruce K., and Charles Yu. An Old Testament Theology: An Exegetical, Canonical, and Thematic Approach. Zondervan, 2007, p. 589.`;
+                const result = parseLogosClipboard(clipboard);
+
+                expect(result.mainText).toContain('The narrator lays the foundation');
+                expect(result.mainText).toContain('covenant-keeping king.');
+                expect(result.citation).not.toBeNull();
+                expect(result.citation?.author).toBe('Waltke, Bruce K., and Charles Yu');
+                expect(result.citation?.year).toBe('2007');
+                expect(result.page).toBe('p. 589');
+            });
+
             it('should split Text + APA Citation correctly', () => {
                 const clipboard = `God, in His grace, appears to Manoah’s wife—[through] an angel of the Lord [or] revelation—and promises her a child. When you come to Hannah, there’s no revelation at all. Manoah’s wife, however, is resigned to her barrenness. She has no prayer. She has no praise. Hannah is quite different. She wants a child; she wants a son, and she’s provoked
 
