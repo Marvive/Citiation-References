@@ -92,14 +92,29 @@ export function parseBibtex(bibtex: string): ParsedCitation {
     // If we have a URL and the title doesn't already have one, wrap it
     if (url && title && !title.includes('](')) {
         title = `[${title}](${url})`;
+        // Update rawCitation to reflect the hyperlinked title
+        const plainTitle = titleMatch ? titleMatch[1] : null;
+        if (plainTitle) {
+            bibtex = bibtex.replace(
+                new RegExp(`title\\s*=\\s*\\{${plainTitle.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\}`, 'i'),
+                `title={${title}}`
+            );
+        }
     }
 
     // Generate a cleaned title for note names (no markdown links, no brackets)
     const cleanedTitle = title ? title.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[\[\]]/g, '') : null;
 
+    // Generate cite key - use the BibTeX key if available, otherwise generate from author/year
+    let finalCiteKey = citeKey;
+    if (citeKey === 'unknown' && authorMatch && yearMatch) {
+        const authorLastName = authorMatch[1].split(',')[0].trim().toLowerCase().replace(/\s+/g, '-');
+        finalCiteKey = `${authorLastName}-${yearMatch[1]}`;
+    }
+
     return {
         format: 'bibtex',
-        citeKey,
+        citeKey: finalCiteKey,
         author: authorMatch ? authorMatch[1] : null,
         title,
         cleanedTitle,

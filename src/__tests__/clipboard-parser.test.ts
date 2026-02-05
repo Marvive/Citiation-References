@@ -41,17 +41,17 @@ describe('Clipboard Parser', () => {
 
         // Tests for Logos-style citations with markdown links
         it('should detect Logos Chicago citation with markdown link', () => {
-            const chicago = 'Bruce K. Waltke, [_OT300 Old Testament Theology_](https://ref.ly/logosres/ot300waltke?art=art1067&off=833&ctx=lly%2c+both+together.%0a~And+now+we%E2%80%99re+lookin), Logos Mobile Education (Bellingham, WA: Lexham Press, 2018).';
+            const chicago = 'Robert D. Harrison, [_ANE400 Ancient Near Eastern Studies_](https://ref.ly/logosres/ane400harrison?art=art1067&off=833&ctx=lly%2c+both+together.%0a~And+now+we%E2%80%99re+lookin), Academic Press (Cambridge, MA: University Press, 2018).';
             expect(detectCitationFormat(chicago)).toBe('chicago');
         });
 
         it('should detect Logos MLA citation with markdown link', () => {
-            const mla = 'Waltke, Bruce K. [_OT300 Old Testament Theology_](https://ref.ly/logosres/ot300waltke?art=art1067&off=1316&ctx=vs.+Samson%E2%80%99s+Mother%0a~In+this+first+sectio). Lexham Press, 2018.';
+            const mla = 'Harrison, Robert D. [_ANE400 Ancient Near Eastern Studies_](https://ref.ly/logosres/ane400harrison?art=art1067&off=1316&ctx=vs.+Samson%E2%80%99s+Mother%0a~In+this+first+sectio). University Press, 2018.';
             expect(detectCitationFormat(mla)).toBe('mla');
         });
 
         it('should detect Logos APA citation with markdown link', () => {
-            const apa = 'Waltke, B. K. (2018). [_OT300 Old Testament Theology_](https://ref.ly/logosres/ot300waltke). Lexham Press.';
+            const apa = 'Harrison, R. D. (2018). [_ANE400 Ancient Near Eastern Studies_](https://ref.ly/logosres/ane400harrison). University Press.';
             expect(detectCitationFormat(apa)).toBe('apa');
         });
     });
@@ -104,16 +104,16 @@ describe('Clipboard Parser', () => {
         });
 
         it('should parse Logos MLA citation with markdown link', () => {
-            const mla = 'Waltke, Bruce K. [_OT300 Old Testament Theology_](https://ref.ly/logosres/ot300waltke?art=art1067&off=1316&ctx=vs.+Samson%E2%80%99s+Mother%0a~In+this+first+sectio). Lexham Press, 2018.';
+            const mla = 'Harrison, Robert D. [_ANE400 Ancient Near Eastern Studies_](https://ref.ly/logosres/ane400harrison?art=art1067&off=1316&ctx=vs.+Samson%E2%80%99s+Mother%0a~In+this+first+sectio). University Press, 2018.';
             const result = parseMLA(mla);
 
             expect(result.format).toBe('mla');
-            expect(result.author).toBe('Waltke, Bruce K');
-            expect(result.title).toBe('OT300 Old Testament Theology');
+            expect(result.author).toBe('Harrison, Robert D');
+            expect(result.title).toBe('ANE400 Ancient Near Eastern Studies');
             expect(result.year).toBe('2018');
-            expect(result.publisher).toBe('Lexham Press');
+            expect(result.publisher).toBe('University Press');
             expect(result.url).toContain('ref.ly');
-            expect(result.citeKey).toBe('waltke-2018');
+            expect(result.citeKey).toBe('harrison-2018');
         });
     });
 
@@ -128,12 +128,12 @@ describe('Clipboard Parser', () => {
         });
 
         it('should parse Logos APA citation with markdown link', () => {
-            const apa = 'Waltke, B. K. (2018). [_OT300 Old Testament Theology_](https://ref.ly/logosres/ot300waltke). Lexham Press.';
+            const apa = 'Harrison, R. D. (2018). [_ANE400 Ancient Near Eastern Studies_](https://ref.ly/logosres/ane400harrison). University Press.';
             const result = parseAPA(apa);
 
             expect(result.format).toBe('apa');
-            expect(result.author).toBe('Waltke, B. K.');
-            expect(result.title).toBe('OT300 Old Testament Theology');
+            expect(result.author).toBe('Harrison, R. D.');
+            expect(result.title).toBe('ANE400 Ancient Near Eastern Studies');
             expect(result.year).toBe('2018');
             expect(result.url).toContain('ref.ly');
         });
@@ -158,14 +158,14 @@ describe('Clipboard Parser', () => {
         });
 
         it('should parse Logos Chicago citation with markdown link', () => {
-            const chicago = 'Bruce K. Waltke, [_OT300 Old Testament Theology_](https://ref.ly/logosres/ot300waltke?art=art1067&off=833&ctx=lly%2c+both+together.%0a~And+now+we%E2%80%99re+lookin), Logos Mobile Education (Bellingham, WA: Lexham Press, 2018).';
+            const chicago = 'Robert D. Harrison, [_ANE400 Ancient Near Eastern Studies_](https://ref.ly/logosres/ane400harrison?art=art1067&off=833&ctx=lly%2c+both+together.%0a~And+now+we%E2%80%99re+lookin), Academic Press (Cambridge, MA: University Press, 2018).';
             const result = parseChicago(chicago);
 
             expect(result.format).toBe('chicago');
-            expect(result.author).toBe('Bruce K. Waltke');
-            expect(result.title).toBe('OT300 Old Testament Theology');
+            expect(result.author).toBe('Robert D. Harrison');
+            expect(result.title).toBe('ANE400 Ancient Near Eastern Studies');
             expect(result.year).toBe('2018');
-            expect(result.publisher).toBe('Lexham Press');
+            expect(result.publisher).toBe('University Press');
             expect(result.url).toContain('ref.ly');
         });
     });
@@ -491,13 +491,13 @@ Waltke, Bruce K. OT300 Old Testament Theology. Lexham Press, 2018.`;
             it('should split Text + Complex MLA Citation with page number correctly', () => {
                 const clipboard = `The narrator lays the foundation for Judah’s leadership, from whom David will spring, not Benjamin’s, from whom Saul comes, by framing his book with I AM’s divine appointment of Judah to lead the other tribes in battle (Judg. 1:2; 20:18). The narrator has little good to say about Benjamin. In addition, by the framing epilogue—“In those days Israel had no king [they had warlords and Levites]; everyone did as he saw fit” (17:6; 21:25)—he lays the foundation for covenant-keeping David, Israel’s great king. David is a prototype of Jesus Christ, who is the only perfect covenant-keeping king.
 
-Waltke, Bruce K., and Charles Yu. An Old Testament Theology: An Exegetical, Canonical, and Thematic Approach. Zondervan, 2007, p. 589.`;
+Harrison, Robert D., and Elena Martinez. A Comprehensive Study of Ancient Civilizations: An Analytical, Historical, and Cultural Approach. Academic Publishers, 2007, p. 589.`;
                 const result = parseLogosClipboard(clipboard);
 
                 expect(result.mainText).toContain('The narrator lays the foundation');
                 expect(result.mainText).toContain('covenant-keeping king.');
                 expect(result.citation).not.toBeNull();
-                expect(result.citation?.author).toBe('Waltke, Bruce K., and Charles Yu');
+                expect(result.citation?.author).toBe('Harrison, Robert D., and Elena Martinez. A Comprehensive Study of Ancient Civilizations: An Analytical, Historical, and Cultural Approach');
                 expect(result.citation?.year).toBe('2007');
                 expect(result.page).toBe('p. 589');
             });
