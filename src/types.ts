@@ -41,6 +41,7 @@ export interface ParsedCitation {
     citeKey: string;
     author: string | null;
     title: string | null;
+    cleanedTitle: string | null;
     year: string | null;
     pages: string | null;
     publisher: string | null;

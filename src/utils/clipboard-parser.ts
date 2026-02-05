@@ -94,11 +94,15 @@ export function parseBibtex(bibtex: string): ParsedCitation {
         title = `[${title}](${url})`;
     }
 
+    // Generate a cleaned title for note names (no markdown links, no brackets)
+    const cleanedTitle = title ? title.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[\[\]]/g, '') : null;
+
     return {
         format: 'bibtex',
         citeKey,
         author: authorMatch ? authorMatch[1] : null,
         title,
+        cleanedTitle,
         year: yearMatch ? yearMatch[1] : null,
         pages: pagesMatch ? pagesMatch[1] : null,
         publisher: publisherMatch ? publisherMatch[1] : null,
@@ -182,11 +186,14 @@ export function parseMLA(text: string): ParsedCitation {
         ? `${author.split(',')[0].toLowerCase().replace(/\s+/g, '-')}-${year}`
         : 'unknown';
 
+    const cleanedTitle = title ? title.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[\[\]]/g, '') : null;
+
     return {
         format: 'mla',
         citeKey,
         author,
         title,
+        cleanedTitle,
         year,
         pages: null,
         publisher,
@@ -274,11 +281,14 @@ export function parseAPA(text: string): ParsedCitation {
         citeKey = `${lastName}-${year}`;
     }
 
+    const cleanedTitle = title ? title.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[\[\]]/g, '') : null;
+
     return {
         format: 'apa',
         citeKey,
         author,
         title,
+        cleanedTitle,
         year,
         pages: null,
         publisher,
@@ -381,11 +391,14 @@ export function parseChicago(text: string): ParsedCitation {
         citeKey = `${lastName}-${year}`;
     }
 
+    const cleanedTitle = title ? title.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[\[\]]/g, '') : null;
+
     return {
         format: 'chicago',
         citeKey,
         author,
         title,
+        cleanedTitle,
         year,
         pages: null,
         publisher,

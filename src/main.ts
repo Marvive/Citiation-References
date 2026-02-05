@@ -100,10 +100,10 @@ export default class CitationReferencePlugin extends Plugin {
 
         const folder = this.settings.citationFolder.trim() || '';
 
-        // Determine the note name - always use book title with "References" suffix
+        // Determine the note name - always use book title (cleaned) with "References" suffix
         let noteName = citation.citeKey;
-        if (citation.title) {
-            noteName = `${citation.title} - References`;
+        if (citation.cleanedTitle || citation.title) {
+            noteName = `${citation.cleanedTitle || citation.title} - References`;
         }
         noteName = sanitizeNoteName(noteName);
 

@@ -19,49 +19,16 @@ export function linkBibleVerses(text: string, version: string = 'esv'): string {
     // Group 5: Optional end verse
     const verseRegex = /\b((?:[123]|I{1,3})\s*)?([A-Za-z]+)\.?\s+(\d+):(\d+)(?:\s*[-–]\s*(\d+))?\b/g;
 
-    // Regex to match sequential references like "; 21:1" or ", 22:1"
-    // Group 1: Separator
-    // Group 2: Chapter
-    // Group 3: Verse
-    // Group 4: Optional end verse
-    const sequentialRegex = /([;,(])\s*(\d+):(\d+)(?:\s*[-–]\s*(\d+))?\b/g;
-
     let lastBookCode: string | null = null;
-
-    // First pass: Link all full references and track the last book
-    let processedText = text.replace(verseRegex, (match: string, prefix: string | undefined, book: string, chapter: string, verse: string, endVerse: string | undefined) => {
-        let normalizedBook = ((prefix || '') + book).toLowerCase().replace(/\s+/g, '');
-        normalizedBook = normalizedBook
-            .replace(/^iii/, '3')
-            .replace(/^ii/, '2')
-            .replace(/^i/, '1');
-
-        const bookCode = BIBLE_BOOKS[normalizedBook];
-
-        if (!bookCode) {
-            return match;
-        }
-
-        lastBookCode = bookCode;
-
-        const ref = endVerse
-            ? `${bookCode}${chapter}.${verse}-${endVerse}`
-            : `${bookCode}${chapter}.${verse}`;
-
-        return `[${match}](https://ref.ly/${ref};${logosVersion})`;
-    });
-
-    // Second pass: Handle sequential references if we have a lastBookCode
-    // We need to be careful not to double-link or link things that aren't intended
-    // We'll use a loop to maintain state correctly across the string
-
-    // Reset state for new processing
-    lastBookCode = null;
+    let lastChapter: string | null = null;
     let finalResult = "";
     let lastIndex = 0;
 
-    // Combining both regexes to process the string chronologically
-    const combinedRegex = /\b((?:[123]|I{1,3})\s*)?([A-Za-z]+)\.?\s+(\d+):(\d+)(?:\s*[-–]\s*(\d+))?\b|([;,(])\s*(\d+):(\d+)(?:\s*[-–]\s*(\d+))?\b/g;
+    // Combining regexes to process the string chronologically
+    // Pattern 1: Book Chapter:Verse
+    // Pattern 2: separator Chapter:Verse
+    // Pattern 3: separator Verse (only if Book and Chapter are already known)
+    const combinedRegex = /\b((?:[123]|I{1,3})\s*)?([A-Za-z]+)\.?\s+(\d+):(\d+)(?:\s*[-–]\s*(\d+))?\b|([;,(])\s*(\d+):(\d+)(?:\s*[-–]\s*(\d+))?\b|([,])\s*(\d+)(?:\s*[-–]\s*(\d+))?\b/g;
 
     let match;
     while ((match = combinedRegex.exec(text)) !== null) {
@@ -82,21 +49,32 @@ export function linkBibleVerses(text: string, version: string = 'esv'): string {
 
             if (bookCode) {
                 lastBookCode = bookCode;
+                lastChapter = chapter;
                 const ref = endVerse ? `${bookCode}${chapter}.${verse}-${endVerse}` : `${bookCode}${chapter}.${verse}`;
                 finalResult += `[${match[0]}](https://ref.ly/${ref};${logosVersion})`;
             } else {
                 lastBookCode = null;
+                lastChapter = null;
                 finalResult += match[0];
             }
         } else if (match[6] && lastBookCode) {
-            // Sequential match (; Chapter:Verse)
+            // Sequential match (separator Chapter:Verse)
             const separator = match[6];
             const chapter = match[7];
             const verse = match[8];
             const endVerse = match[9];
 
+            lastChapter = chapter;
             const ref = endVerse ? `${lastBookCode}${chapter}.${verse}-${endVerse}` : `${lastBookCode}${chapter}.${verse}`;
-            // Capture the content without the separator to link it
+            const contentToLink = match[0].substring(separator.length).trim();
+            finalResult += `${separator} [${contentToLink}](https://ref.ly/${ref};${logosVersion})`;
+        } else if (match[10] && lastBookCode && lastChapter) {
+            // Sequential match (separator Verse only)
+            const separator = match[10];
+            const verse = match[11];
+            const endVerse = match[12];
+
+            const ref = endVerse ? `${lastBookCode}${lastChapter}.${verse}-${endVerse}` : `${lastBookCode}${lastChapter}.${verse}`;
             const contentToLink = match[0].substring(separator.length).trim();
             finalResult += `${separator} [${contentToLink}](https://ref.ly/${ref};${logosVersion})`;
         } else {
