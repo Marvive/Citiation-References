@@ -1,7 +1,7 @@
 {
 	"id": "citation-references",
 	"name": "Citation References",
-	"version": "2.0.0",
+	"version": "1.1.0",
 	"minAppVersion": "0.15.0",
 	"description": "Easily manage citations from Logos Bible Software, BibTeX, MLA, APA, and Chicago formats within your notes.",
 	"author": "Michael Marvive",
