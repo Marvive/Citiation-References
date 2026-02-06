@@ -73,6 +73,15 @@ export function toTitleCase(str: string): string {
     const smallWords = /^(a|an|and|as|at|but|by|en|for|if|in|of|on|or|the|to|v\.?|via|vs\.?)$/i;
 
     return str.split(/\s+/).map((word, index, array) => {
+        // If word has uppercase characters beyond the first letter, preserve its casing
+        // e.g., OT300, NIV, iPhone, USA
+        const hasExtraCapitals = /[A-Z]/.test(word.slice(1));
+        const hasNumbers = /[0-9]/.test(word);
+
+        if (hasExtraCapitals || (index === 0 && hasNumbers && /[A-Z]/.test(word))) {
+            return word;
+        }
+
         if (
             index > 0 &&
             index < array.length - 1 &&

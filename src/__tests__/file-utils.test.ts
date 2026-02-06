@@ -2,7 +2,8 @@ import {
     sanitizeNoteName,
     generateNotePath,
     generateMetadataFrontmatter,
-    generateCitationFrontmatter
+    generateCitationFrontmatter,
+    toTitleCase
 } from '../utils/file-utils';
 import { ParsedCitation } from '../types';
 
@@ -146,6 +147,33 @@ describe('File Utils', () => {
             const result = generateCitationFrontmatter(citation);
 
             expect(result).toContain('title: "Book with \\"Quoted\\" Title"');
+        });
+    });
+
+    describe('toTitleCase', () => {
+        it('should capitalize the first letter of each word', () => {
+            expect(toTitleCase('hello world')).toBe('Hello World');
+        });
+
+        it('should handle small words in the middle', () => {
+            expect(toTitleCase('the book of acts')).toBe('The Book of Acts');
+        });
+
+        it('should preserve acronyms with multiple capital letters', () => {
+            expect(toTitleCase('OT300 Old Testament Theology')).toBe('OT300 Old Testament Theology');
+        });
+
+        it('should preserve all-caps acronyms', () => {
+            expect(toTitleCase('NIV Bible')).toBe('NIV Bible');
+            expect(toTitleCase('USA Today')).toBe('USA Today');
+        });
+
+        it('should handle mixed case words that should be preserved', () => {
+            expect(toTitleCase('iPhone and iPad')).toBe('iPhone and iPad');
+        });
+
+        it('should title case lowercase acronyms if no existing capitals are present', () => {
+            expect(toTitleCase('niv bible')).toBe('Niv Bible');
         });
     });
 });
