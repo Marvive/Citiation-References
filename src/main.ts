@@ -129,7 +129,8 @@ export default class CitationReferencePlugin extends Plugin {
         await this.saveSettings();
 
         // Build the callout block
-        const calloutTitle = this.settings.customCalloutTitle || noteName;
+        const bookTitle = citation.cleanedTitle || citation.title || citation.citeKey;
+        const calloutTitle = this.settings.customCalloutTitle || toTitleCase(bookTitle);
         const quotedTextParts = [
             `> [!cite] ${calloutTitle}`,
             `> ${mainText.split('\n').join('\n> ')}`
