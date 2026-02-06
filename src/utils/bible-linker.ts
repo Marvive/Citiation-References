@@ -11,14 +11,6 @@ import { BIBLE_BOOKS, VERSION_MAPPING } from '../constants/bible-books';
 export function linkBibleVerses(text: string, version: string = 'esv'): string {
     const logosVersion = VERSION_MAPPING[version.toLowerCase()] || version;
 
-    // Regex to match Bible verse patterns
-    // Group 1: Book prefix (1, 2, 3, I, II, III)
-    // Group 2: Book name (John, Gen, etc.)
-    // Group 3: Chapter
-    // Group 4: Verse
-    // Group 5: Optional end verse
-    const verseRegex = /\b((?:[123]|I{1,3})\s*)?([A-Za-z]+)\.?\s+(\d+):(\d+)(?:\s*[-–]\s*(\d+))?\b/g;
-
     let lastBookCode: string | null = null;
     let lastChapter: string | null = null;
     let finalResult = "";
