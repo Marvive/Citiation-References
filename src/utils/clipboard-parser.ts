@@ -23,7 +23,7 @@ export function detectCitationFormat(text: string): CitationFormat {
     }
 
     // Check for Logos-style markdown links in titles: [_Title_](url) or [*Title*](url)
-    const hasMarkdownLink = /\[[\*_][^\]]+[\*_]\]\([^)]+\)/.test(trimmed);
+    const hasMarkdownLink = /\[[*_][^\]]+[*_]\]\([^)]+\)/.test(trimmed);
 
     if (hasMarkdownLink) {
         // Chicago/Turabian with markdown link: Author, [_Title_](...), Series (Place: Publisher, Year).
@@ -103,7 +103,7 @@ export function parseBibtex(bibtex: string): ParsedCitation {
     }
 
     // Generate a cleaned title for note names (no markdown links, no brackets)
-    const cleanedTitle = title ? title.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[\[\]]/g, '') : null;
+    const cleanedTitle = title ? title.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[[\]]/g, '') : null;
 
     // Generate cite key - use the BibTeX key if available, otherwise generate from author/year
     let finalCiteKey = citeKey;
@@ -142,7 +142,7 @@ export function parseMLA(text: string): ParsedCitation {
     let publisher: string | null = null;
 
     // Check for Logos-style markdown link: [_Title_](url) or [*Title*](url)
-    const markdownLinkMatch = citation.match(/\[[\*_]([^\]]+)[\*_]\]\(([^)]+)\)/);
+    const markdownLinkMatch = citation.match(/\[[*_]([^\]]+)[*_]\]\(([^)]+)\)/);
 
     if (markdownLinkMatch) {
         // Logos format: Author. [_Title_](url). Publisher, Year.
@@ -201,7 +201,7 @@ export function parseMLA(text: string): ParsedCitation {
         ? `${author.split(',')[0].toLowerCase().replace(/\s+/g, '-')}-${year}`
         : 'unknown';
 
-    const cleanedTitle = title ? title.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[\[\]]/g, '') : null;
+    const cleanedTitle = title ? title.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[[\]]/g, '') : null;
 
     return {
         format: 'mla',
@@ -233,7 +233,7 @@ export function parseAPA(text: string): ParsedCitation {
     let publisher: string | null = null;
 
     // Check for Logos-style markdown link: [_Title_](url) or [*Title*](url)
-    const markdownLinkMatch = citation.match(/\[[\*_]([^\]]+)[\*_]\]\(([^)]+)\)/);
+    const markdownLinkMatch = citation.match(/\[[*_]([^\]]+)[*_]\]\(([^)]+)\)/);
 
     if (markdownLinkMatch) {
         // Logos APA format: Author (Year). [_Title_](url). Publisher.
@@ -296,7 +296,7 @@ export function parseAPA(text: string): ParsedCitation {
         citeKey = `${lastName}-${year}`;
     }
 
-    const cleanedTitle = title ? title.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[\[\]]/g, '') : null;
+    const cleanedTitle = title ? title.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[[\]]/g, '') : null;
 
     return {
         format: 'apa',
@@ -328,7 +328,7 @@ export function parseChicago(text: string): ParsedCitation {
     let publisher: string | null = null;
 
     // Check for Logos-style markdown link: [_Title_](url) or [*Title*](url)
-    const markdownLinkMatch = citation.match(/\[[\*_]([^\]]+)[\*_]\]\(([^)]+)\)/);
+    const markdownLinkMatch = citation.match(/\[[*_]([^\]]+)[*_]\]\(([^)]+)\)/);
 
     if (markdownLinkMatch) {
         // Logos Chicago format: Author, [_Title_](url), Series (Place: Publisher, Year).
@@ -406,7 +406,7 @@ export function parseChicago(text: string): ParsedCitation {
         citeKey = `${lastName}-${year}`;
     }
 
-    const cleanedTitle = title ? title.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[\[\]]/g, '') : null;
+    const cleanedTitle = title ? title.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/[[\]]/g, '') : null;
 
     return {
         format: 'chicago',
