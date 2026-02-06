@@ -3,7 +3,7 @@
 	"name": "Citation References",
 	"version": "1.1.0",
 	"minAppVersion": "0.15.0",
-	"description": "Easily manage citations from Logos Bible Software, BibTeX, MLA, APA, and Chicago formats within your notes.",
+	"description": "Connect references based on APA, MLA, Chicago and BibTex citations. Additional Support for Logos Bible Software Citations.",
 	"author": "Michael Marvive",
 	"authorUrl": "https://github.com/Marvive",
 	"fundingUrl": "https://github.com/sponsors/Marvive",
