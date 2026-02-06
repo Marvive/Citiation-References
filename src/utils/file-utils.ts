@@ -63,3 +63,23 @@ export function generateCitationFrontmatter(citation: ParsedCitation, customFiel
     metadata += '---\n\n';
     return metadata;
 }
+/**
+ * Converts a string to Title Case
+ */
+export function toTitleCase(str: string): string {
+    if (!str) return str;
+
+    // List of words that should remain lowercase (unless first/last)
+    const smallWords = /^(a|an|and|as|at|but|by|en|for|if|in|of|on|or|the|to|v\.?|via|vs\.?)$/i;
+
+    return str.split(/\s+/).map((word, index, array) => {
+        if (
+            index > 0 &&
+            index < array.length - 1 &&
+            smallWords.test(word)
+        ) {
+            return word.toLowerCase();
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }).join(' ');
+}

@@ -63,10 +63,10 @@ export class CitationPluginSettingTab extends PluginSettingTab {
 
         new Setting(this.containerEl)
             .setName("Callout title")
-            .setDesc("The title for the callout block (default is \"citation reference\")")
+            .setDesc("The title for the callout block (defaults to book title if left blank)")
             .addText((text) =>
                 text
-                    .setPlaceholder("Example: citation reference")
+                    .setPlaceholder("Example: Citation Reference")
                     .setValue(this.plugin.settings.customCalloutTitle)
                     .onChange(async (value) => {
                         this.plugin.settings.customCalloutTitle = value;

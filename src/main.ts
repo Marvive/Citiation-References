@@ -9,7 +9,7 @@ import { LogosPluginSettings, DEFAULT_SETTINGS, ParsedCitation } from './types';
 import { CitationPluginSettingTab } from './settings';
 import { parseLogosClipboard, cleanFormattedText } from './utils/clipboard-parser';
 import { linkBibleVerses } from './utils/bible-linker';
-import { sanitizeNoteName, generateCitationFrontmatter } from './utils/file-utils';
+import { sanitizeNoteName, generateCitationFrontmatter, toTitleCase } from './utils/file-utils';
 
 export default class CitationReferencePlugin extends Plugin {
     settings: LogosPluginSettings;
@@ -103,7 +103,7 @@ export default class CitationReferencePlugin extends Plugin {
         // Determine the note name - always use book title (cleaned) with "References" suffix
         let noteName = citation.citeKey;
         if (citation.cleanedTitle || citation.title) {
-            noteName = `${citation.cleanedTitle || citation.title} - References`;
+            noteName = `${toTitleCase(citation.cleanedTitle || citation.title || "")} - References`;
         }
         noteName = sanitizeNoteName(noteName);
 
@@ -129,7 +129,7 @@ export default class CitationReferencePlugin extends Plugin {
         await this.saveSettings();
 
         // Build the callout block
-        const calloutTitle = this.settings.customCalloutTitle || 'Citation Reference';
+        const calloutTitle = this.settings.customCalloutTitle || noteName;
         const quotedTextParts = [
             `> [!cite] ${calloutTitle}`,
             `> ${mainText.split('\n').join('\n> ')}`
