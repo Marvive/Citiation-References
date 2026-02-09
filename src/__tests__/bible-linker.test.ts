@@ -86,6 +86,14 @@ describe('Bible Linker', () => {
             expect(result).toContain('https://ref.ly/Ps23.1;esv');
             expect(result).toContain('https://ref.ly/Ps119.105;esv');
         });
+
+        it('should map "Isa" to Isaiah, not 1 Samuel', () => {
+            const text = 'Isa 1:1 and Isaiah 1:1';
+            const result = linkBibleVerses(text, 'esv');
+
+            expect(result).toContain('https://ref.ly/Is1.1;esv');
+            expect(result).not.toContain('https://ref.ly/1Sa1.1;esv');
+        });
     });
 
     describe('getLogosVersionCode', () => {

@@ -36,7 +36,9 @@ export function linkBibleVerses(text: string, version: string = 'esv'): string {
             const endVerse = match[5];
 
             let normalizedBook = ((prefix || '') + book).toLowerCase().replace(/\s+/g, '');
-            normalizedBook = normalizedBook.replace(/^iii/, '3').replace(/^ii/, '2').replace(/^i/, '1');
+            if (!BIBLE_BOOKS[normalizedBook]) {
+                normalizedBook = normalizedBook.replace(/^iii/, '3').replace(/^ii/, '2').replace(/^i/, '1');
+            }
             const bookCode = BIBLE_BOOKS[normalizedBook];
 
             if (bookCode) {
