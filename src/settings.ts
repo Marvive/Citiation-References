@@ -4,7 +4,7 @@
 
 import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import { FolderSuggest } from './ui/folder-suggest';
-import { LogosPluginSettings, CitationFormat } from './types';
+import { LogosPluginSettings, CitationFormat, LogosSearchType } from './types';
 
 interface PluginWithSettings extends Plugin {
     settings: LogosPluginSettings;
@@ -83,6 +83,49 @@ export class CitationPluginSettingTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.showFullCitationInCallout = value;
                         await this.plugin.saveSettings();
+                    })
+            );
+
+        new Setting(this.containerEl)
+            .setName("Callout type")
+            .setDesc("The Obsidian callout type to use (e.g. cite, quote, note, info, tip, warning)")
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOptions({
+                        cite: "Cite",
+                        quote: "Quote",
+                        note: "Note",
+                        info: "Info",
+                        tip: "Tip",
+                        warning: "Warning",
+                        abstract: "Abstract",
+                        example: "Example",
+                    })
+                    .setValue(
+                        ['cite', 'quote', 'note', 'info', 'tip', 'warning', 'abstract', 'example']
+                            .includes(this.plugin.settings.calloutType)
+                            ? this.plugin.settings.calloutType
+                            : 'cite'
+                    )
+                    .onChange(async (value) => {
+                        this.plugin.settings.calloutType = value;
+                        await this.plugin.saveSettings();
+                    })
+            )
+            .addText((text) =>
+                text
+                    .setPlaceholder("Or type a custom callout type")
+                    .setValue(
+                        !['cite', 'quote', 'note', 'info', 'tip', 'warning', 'abstract', 'example']
+                            .includes(this.plugin.settings.calloutType)
+                            ? this.plugin.settings.calloutType
+                            : ''
+                    )
+                    .onChange(async (value) => {
+                        if (value.trim()) {
+                            this.plugin.settings.calloutType = value.trim();
+                            await this.plugin.saveSettings();
+                        }
                     })
             );
 
@@ -270,5 +313,21 @@ export class CitationPluginSettingTab extends PluginSettingTab {
                         })
                 );
         }
+
+        new Setting(logosSectionContent)
+            .setName("Bible search mode")
+            .setDesc("Search type to use when opening searches in Logos Bible Software")
+            .addDropdown((dropdown) =>
+                dropdown
+                    .addOptions({
+                        lexical: "Precise (Lexical)",
+                        semantic: "Smart (Semantic)",
+                    })
+                    .setValue(this.plugin.settings.logosSearchType)
+                    .onChange(async (value) => {
+                        this.plugin.settings.logosSearchType = value as LogosSearchType;
+                        await this.plugin.saveSettings();
+                    })
+            );
     }
 }

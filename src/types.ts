@@ -5,10 +5,14 @@
 /** Supported citation formats */
 export type CitationFormat = 'auto' | 'bibtex' | 'mla' | 'apa' | 'chicago';
 
+/** Supported Logos search modes */
+export type LogosSearchType = 'lexical' | 'semantic';
+
 export interface LogosPluginSettings {
     citationFolder: string;
     citationCounters: Record<string, number>;
     customCalloutTitle: string;
+    calloutType: string;
     autoDetectBibleVerses: boolean;
     bibleTranslation: string;
     useCustomMetadata: boolean;
@@ -17,12 +21,14 @@ export interface LogosPluginSettings {
     showFullCitationInCallout: boolean;
     includeReflyLink: boolean;
     citationFormat: CitationFormat;
+    logosSearchType: LogosSearchType;
 }
 
 export const DEFAULT_SETTINGS: LogosPluginSettings = {
     citationFolder: '',
     citationCounters: {},
     customCalloutTitle: '',
+    calloutType: 'cite',
     autoDetectBibleVerses: false,
     bibleTranslation: 'esv',
     useCustomMetadata: false,
@@ -31,6 +37,7 @@ export const DEFAULT_SETTINGS: LogosPluginSettings = {
     showFullCitationInCallout: true,
     includeReflyLink: false,
     citationFormat: 'auto',
+    logosSearchType: 'lexical',
 };
 
 /**

@@ -10,6 +10,7 @@ import { CitationPluginSettingTab } from './settings';
 import { parseLogosClipboard, cleanFormattedText } from './utils/clipboard-parser';
 import { linkBibleVerses } from './utils/bible-linker';
 import { sanitizeNoteName, generateCitationFrontmatter, toTitleCase } from './utils/file-utils';
+import { buildLogosSearchUrl } from './utils/logos-search';
 
 export default class CitationReferencePlugin extends Plugin {
     settings: LogosPluginSettings;
@@ -32,6 +33,14 @@ export default class CitationReferencePlugin extends Plugin {
             name: 'List all citations',
             editorCallback: async (editor: Editor, view: MarkdownView) => {
                 await this.handleListCitations(editor, view);
+            }
+        });
+
+        this.addCommand({
+            id: 'search-in-logos',
+            name: 'Search in Logos Bible Software',
+            editorCallback: (editor: Editor) => {
+                this.handleSearchInLogos(editor);
             }
         });
 
@@ -131,8 +140,9 @@ export default class CitationReferencePlugin extends Plugin {
         // Build the callout block
         const bookTitle = citation.cleanedTitle || citation.title || citation.citeKey;
         const calloutTitle = this.settings.customCalloutTitle || toTitleCase(bookTitle);
+        const calloutType = this.settings.calloutType || 'cite';
         const quotedTextParts = [
-            `> [!cite] ${calloutTitle}`,
+            `> [!${calloutType}] ${calloutTitle}`,
             `> ${mainText.split('\n').join('\n> ')}`
         ];
 
@@ -178,6 +188,25 @@ export default class CitationReferencePlugin extends Plugin {
         // Create or update the reference file
         await this.createOrUpdateReferenceFile(filePath, folder, citation, file.basename, blockId, page);
     }
+
+    /**
+     * Handles the "Search in Logos Bible Software" command
+     */
+    private handleSearchInLogos(editor: Editor): void {
+        const selection = editor.getSelection().trim();
+
+        if (!selection) {
+            new Notice("Select text to search in Logos Bible Software.");
+            return;
+        }
+
+        const searchType = this.settings.logosSearchType || 'lexical';
+        const url = buildLogosSearchUrl(selection, searchType);
+
+        window.open(url);
+        new Notice(`Searching Logos: "${selection.substring(0, 40)}${selection.length > 40 ? '…' : ''}"`);
+    }
+
 
     /**
      * Creates a new reference file or appends a citation to an existing one
@@ -364,3 +393,6 @@ export default class CitationReferencePlugin extends Plugin {
 
 // Re-export types for settings tab
 export type { LogosPluginSettings };
+
+// Re-export for testing
+export { buildLogosSearchUrl } from './utils/logos-search';
