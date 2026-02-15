@@ -61,7 +61,8 @@ export function linkBibleVerses(text: string, version: string = 'esv'): string {
             lastChapter = chapter;
             const ref = endVerse ? `${lastBookCode}${chapter}.${verse}-${endVerse}` : `${lastBookCode}${chapter}.${verse}`;
             const contentToLink = match[0].substring(separator.length).trim();
-            finalResult += `${separator} [${contentToLink}](https://ref.ly/${ref};${logosVersion})`;
+            const spacing = separator === '(' ? '' : ' ';
+            finalResult += `${separator}${spacing}[${contentToLink}](https://ref.ly/${ref};${logosVersion})`;
         } else if (match[10] && lastBookCode && lastChapter) {
             // Sequential match (separator Verse only)
             const separator = match[10];
@@ -70,7 +71,8 @@ export function linkBibleVerses(text: string, version: string = 'esv'): string {
 
             const ref = endVerse ? `${lastBookCode}${lastChapter}.${verse}-${endVerse}` : `${lastBookCode}${lastChapter}.${verse}`;
             const contentToLink = match[0].substring(separator.length).trim();
-            finalResult += `${separator} [${contentToLink}](https://ref.ly/${ref};${logosVersion})`;
+            const spacing = separator === '(' ? '' : ' ';
+            finalResult += `${separator}${spacing}[${contentToLink}](https://ref.ly/${ref};${logosVersion})`;
         } else {
             finalResult += match[0];
         }
