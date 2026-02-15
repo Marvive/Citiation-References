@@ -73,6 +73,16 @@ export function detectCitationFormat(text: string): CitationFormat {
  * Parses a BibTeX entry into a ParsedCitation
  */
 export function parseBibtex(bibtex: string): ParsedCitation {
+    // Pre-process: Logos sometimes wraps entire field lines in markdown links,
+    // e.g. [journal={Title}](url) or [title={Title}](url)
+    // Normalize these to field={[Title](url)} so standard regexes work correctly
+    bibtex = bibtex.replace(
+        /\[((?:title|journal|booktitle|series)\s*=\s*\{)([^}]+)(\})\]\(([^)]+)\)/gi,
+        (_, fieldPrefix, fieldValue, closingBrace, linkUrl) => {
+            return `${fieldPrefix}[${fieldValue}](${linkUrl})${closingBrace}`;
+        }
+    );
+
     const citeKeyMatch = bibtex.match(/^@\w+\{([^,]+),/);
     let citeKey = citeKeyMatch ? citeKeyMatch[1] : 'unknown';
     citeKey = citeKey.replace(/[_\W]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
@@ -84,21 +94,45 @@ export function parseBibtex(bibtex: string): ParsedCitation {
     const publisherMatch = bibtex.match(/publisher\s*=\s*\{([^}]+)\}/i);
     const urlMatch = bibtex.match(/url\s*=\s*\{([^}]+)\}/i);
 
-    // Clean title - remove markdown links (Wait, user wants hyperlinks if possible)
-    let title = titleMatch ? titleMatch[1] : null;
+    // Fallback title fields: journal, booktitle, series (common in @misc, @article, @inproceedings)
+    const journalMatch = bibtex.match(/journal\s*=\s*\{([^}]+)\}/i);
+    const booktitleMatch = bibtex.match(/booktitle\s*=\s*\{([^}]+)\}/i);
+    const seriesMatch = bibtex.match(/series\s*=\s*\{([^}]+)\}/i);
 
-    const url = urlMatch ? urlMatch[1] : null;
+    // Determine the raw title value: title → journal → booktitle → series
+    let rawTitleValue = titleMatch ? titleMatch[1]
+        : journalMatch ? journalMatch[1]
+            : booktitleMatch ? booktitleMatch[1]
+                : seriesMatch ? seriesMatch[1]
+                    : null;
+    const titleSourceField = titleMatch ? 'title'
+        : journalMatch ? 'journal'
+            : booktitleMatch ? 'booktitle'
+                : seriesMatch ? 'series'
+                    : null;
 
-    // If we have a URL and the title doesn't already have one, wrap it
-    if (url && title && !title.includes('](')) {
-        title = `[${title}](${url})`;
-        // Update rawCitation to reflect the hyperlinked title
-        const plainTitle = titleMatch ? titleMatch[1] : null;
-        if (plainTitle) {
-            bibtex = bibtex.replace(
-                new RegExp(`title\\s*=\\s*\\{${plainTitle.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\}`, 'i'),
-                `title={${title}}`
-            );
+    let title = rawTitleValue;
+    let url = urlMatch ? urlMatch[1] : null;
+
+    // Check if the title value already contains a markdown link [Text](url)
+    if (title) {
+        const embeddedLinkMatch = title.match(/\[([^\]]+)\]\(([^)]+)\)/);
+        if (embeddedLinkMatch) {
+            // Extract URL from the embedded markdown link if we don't already have one
+            if (!url) {
+                url = embeddedLinkMatch[2];
+            }
+            // Title is already linked — keep it as-is
+        } else if (url && !title.includes('](')) {
+            // If we have a URL and the title doesn't already have one, wrap it
+            title = `[${title}](${url})`;
+            // Update rawCitation to reflect the hyperlinked title
+            if (rawTitleValue && titleSourceField) {
+                bibtex = bibtex.replace(
+                    new RegExp(`${titleSourceField}\\s*=\\s*\\{${rawTitleValue.replace(/[.*+?^${}()|[\]\\\\]/g, '\\$&')}\\}`, 'i'),
+                    `${titleSourceField}={${title}}`
+                );
+            }
         }
     }
 

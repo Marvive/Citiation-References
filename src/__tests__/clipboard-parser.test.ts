@@ -90,6 +90,77 @@ describe('Clipboard Parser', () => {
             expect(result.title).toBeNull();
             expect(result.year).toBeNull();
         });
+
+        it('should fall back to journal field when title is missing', () => {
+            const bibtex = `@misc{Swanson_1997,
+                address={Oak Harbor},
+                edition={electronic ed.},
+                journal={Dictionary of Biblical Languages with Semantic Domains : Hebrew (Old Testament)},
+                publisher={Logos Research Systems, Inc.},
+                author={Swanson, James},
+                year={1997} }`;
+            const result = parseBibtex(bibtex);
+            expect(result.cleanedTitle).toBe('Dictionary of Biblical Languages with Semantic Domains : Hebrew (Old Testament)');
+            expect(result.author).toBe('Swanson, James');
+            expect(result.year).toBe('1997');
+            expect(result.publisher).toBe('Logos Research Systems, Inc.');
+        });
+
+        it('should fall back to booktitle field when title and journal are missing', () => {
+            const bibtex = `@inproceedings{doe2020,
+                author={John Doe},
+                booktitle={Proceedings of the Conference on Theology},
+                year={2020} }`;
+            const result = parseBibtex(bibtex);
+            expect(result.cleanedTitle).toBe('Proceedings of the Conference on Theology');
+            expect(result.year).toBe('2020');
+        });
+
+        it('should fall back to series field when title, journal, and booktitle are missing', () => {
+            const bibtex = `@misc{test2021,
+                author={Jane Doe},
+                series={Biblical Commentary Series},
+                year={2021} }`;
+            const result = parseBibtex(bibtex);
+            expect(result.cleanedTitle).toBe('Biblical Commentary Series');
+        });
+
+        it('should prefer title over journal, booktitle, and series', () => {
+            const bibtex = `@article{test2023,
+                title={The Actual Title},
+                journal={Some Journal},
+                booktitle={Some Book},
+                year={2023} }`;
+            const result = parseBibtex(bibtex);
+            expect(result.cleanedTitle).toBe('The Actual Title');
+        });
+
+        it('should handle Logos-style markdown link wrapping entire journal field', () => {
+            const bibtex = `@misc{Swanson_1997,
+                address={Oak Harbor},
+                edition={electronic ed.},
+                [journal={Dictionary of Biblical Languages with Semantic Domains : Hebrew (Old Testament)}](https://ref.ly/logosres/dblhebr?ref=DBLHebrew.DBLH+8014),
+                publisher={Logos Research Systems, Inc.},
+                author={Swanson, James},
+                year={1997} }`;
+            const result = parseBibtex(bibtex);
+            expect(result.cleanedTitle).toBe('Dictionary of Biblical Languages with Semantic Domains : Hebrew (Old Testament)');
+            expect(result.url).toBe('https://ref.ly/logosres/dblhebr?ref=DBLHebrew.DBLH+8014');
+            expect(result.title).toContain('[Dictionary of Biblical Languages');
+            expect(result.title).toContain('](https://ref.ly/');
+            expect(result.author).toBe('Swanson, James');
+            expect(result.year).toBe('1997');
+        });
+
+        it('should handle embedded markdown link inside field value', () => {
+            const bibtex = `@misc{test2020,
+                journal={[Some Dictionary Title](https://ref.ly/test)},
+                author={Test Author},
+                year={2020} }`;
+            const result = parseBibtex(bibtex);
+            expect(result.cleanedTitle).toBe('Some Dictionary Title');
+            expect(result.url).toBe('https://ref.ly/test');
+        });
     });
 
     describe('parseMLA', () => {
