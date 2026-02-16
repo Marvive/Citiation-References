@@ -17,6 +17,9 @@ export interface LogosPluginSettings {
     showFullCitationInCallout: boolean;
     includeReflyLink: boolean;
     citationFormat: CitationFormat;
+    fetchLogosMetadata: boolean;
+    coverImageSubfolder: string;
+    logosDataPath: string;
 }
 
 export const DEFAULT_SETTINGS: LogosPluginSettings = {
@@ -31,6 +34,9 @@ export const DEFAULT_SETTINGS: LogosPluginSettings = {
     showFullCitationInCallout: true,
     includeReflyLink: false,
     citationFormat: 'auto',
+    fetchLogosMetadata: false,
+    coverImageSubfolder: 'covers',
+    logosDataPath: '',
 };
 
 /**
@@ -47,4 +53,8 @@ export interface ParsedCitation {
     publisher: string | null;
     url: string | null;
     rawCitation: string;
+    isbn: string | null;
+    abstract: string | null;
+    keywords: string[] | null;
+    series: string | null;
 }

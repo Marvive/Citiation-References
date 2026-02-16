@@ -35,9 +35,21 @@ export function generateMetadataFrontmatter(fields: string[]): string {
 }
 
 /**
+ * Options for enhanced metadata in frontmatter
+ */
+export interface FrontmatterOptions {
+    fetchLogosMetadata?: boolean;
+    coverImagePath?: string;
+}
+
+/**
  * Generates YAML frontmatter from citation data and custom fields
  */
-export function generateCitationFrontmatter(citation: ParsedCitation, customFields: string[] = []): string {
+export function generateCitationFrontmatter(
+    citation: ParsedCitation,
+    customFields: string[] = [],
+    options: FrontmatterOptions = {}
+): string {
     let metadata = '---\n';
 
     // Add citation fields
@@ -55,8 +67,60 @@ export function generateCitationFrontmatter(citation: ParsedCitation, customFiel
     }
     metadata += `cite-key: "${citation.citeKey}"\n`;
 
-    // Add custom user-defined fields as empty
+    // Enhanced Logos metadata
+    if (options.fetchLogosMetadata) {
+        // local*cover - path to cover image
+        if (options.coverImagePath) {
+            metadata += `"local*cover": [[${options.coverImagePath}]]\n`;
+        } else {
+            metadata += `"local*cover": \n`;
+        }
+
+        // description from abstract
+        if (citation.abstract) {
+            metadata += `description: "${citation.abstract.replace(/"/g, '\\"')}"\n`;
+        } else {
+            metadata += `description: \n`;
+        }
+
+        // isbn
+        if (citation.isbn) {
+            metadata += `isbn: "${citation.isbn}"\n`;
+        } else {
+            metadata += `isbn: \n`;
+        }
+
+        // tags from keywords
+        if (citation.keywords && citation.keywords.length > 0) {
+            metadata += `tags:\n`;
+            citation.keywords.forEach(tag => {
+                metadata += `  - "${tag.replace(/"/g, '\\"')}"\n`;
+            });
+        } else {
+            metadata += `tags: \n`;
+        }
+
+        // publication-date from year
+        if (citation.year) {
+            metadata += `publication-date: ${citation.year}\n`;
+        } else {
+            metadata += `publication-date: \n`;
+        }
+
+        // series
+        if (citation.series) {
+            metadata += `series: "${citation.series.replace(/"/g, '\\"')}"\n`;
+        } else {
+            metadata += `series: \n`;
+        }
+    }
+
+    // Add custom user-defined fields as empty (skip fields already covered by enhanced metadata)
+    const enhancedFields = options.fetchLogosMetadata
+        ? ['local*cover', 'description', 'isbn', 'tags', 'publication-date', 'series']
+        : [];
     customFields.forEach(field => {
+        if (enhancedFields.includes(field.toLowerCase())) return;
         metadata += `${field}: \n`;
     });
 

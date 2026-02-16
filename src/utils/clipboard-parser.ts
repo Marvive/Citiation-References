@@ -93,6 +93,9 @@ export function parseBibtex(bibtex: string): ParsedCitation {
     const pagesMatch = bibtex.match(/pages\s*=\s*\{([^}]+)\}/i);
     const publisherMatch = bibtex.match(/publisher\s*=\s*\{([^}]+)\}/i);
     const urlMatch = bibtex.match(/url\s*=\s*\{([^}]+)\}/i);
+    const isbnMatch = bibtex.match(/isbn\s*=\s*\{([^}]+)\}/i);
+    const abstractMatch = bibtex.match(/abstract\s*=\s*\{([^}]+)\}/i);
+    const keywordsMatch = bibtex.match(/keywords\s*=\s*\{([^}]+)\}/i);
 
     // Fallback title fields: journal, booktitle, series (common in @misc, @article, @inproceedings)
     const journalMatch = bibtex.match(/journal\s*=\s*\{([^}]+)\}/i);
@@ -146,6 +149,11 @@ export function parseBibtex(bibtex: string): ParsedCitation {
         finalCiteKey = `${authorLastName}-${yearMatch[1]}`;
     }
 
+    // Parse keywords into array
+    const keywords = keywordsMatch
+        ? keywordsMatch[1].split(/[;,]/).map(k => k.trim()).filter(k => k.length > 0)
+        : null;
+
     return {
         format: 'bibtex',
         citeKey: finalCiteKey,
@@ -157,6 +165,10 @@ export function parseBibtex(bibtex: string): ParsedCitation {
         publisher: publisherMatch ? publisherMatch[1] : null,
         url: url,
         rawCitation: bibtex,
+        isbn: isbnMatch ? isbnMatch[1] : null,
+        abstract: abstractMatch ? abstractMatch[1] : null,
+        keywords,
+        series: seriesMatch ? seriesMatch[1] : null,
     };
 }
 
@@ -248,6 +260,10 @@ export function parseMLA(text: string): ParsedCitation {
         publisher,
         url,
         rawCitation: citation,
+        isbn: null,
+        abstract: null,
+        keywords: null,
+        series: null,
     };
 }
 
@@ -343,6 +359,10 @@ export function parseAPA(text: string): ParsedCitation {
         publisher,
         url,
         rawCitation: citation,
+        isbn: null,
+        abstract: null,
+        keywords: null,
+        series: null,
     };
 }
 
@@ -453,6 +473,10 @@ export function parseChicago(text: string): ParsedCitation {
         publisher,
         url,
         rawCitation: citation,
+        isbn: null,
+        abstract: null,
+        keywords: null,
+        series: null,
     };
 }
 

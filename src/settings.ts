@@ -5,6 +5,7 @@
 import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import { FolderSuggest } from './ui/folder-suggest';
 import { LogosPluginSettings, CitationFormat } from './types';
+import { findCatalogDbPath } from './utils/catalog-reader';
 
 interface PluginWithSettings extends Plugin {
     settings: LogosPluginSettings;
@@ -236,6 +237,50 @@ export class CitationPluginSettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     })
             );
+
+        new Setting(logosSectionContent)
+            .setName("Fetch enhanced metadata")
+            .setDesc("When enabled, newly created notes will include description, ISBN, tags, publication date, series, and local cover image properties")
+            .addToggle((toggle) =>
+                toggle
+                    .setValue(this.plugin.settings.fetchLogosMetadata)
+                    .onChange(async (value) => {
+                        this.plugin.settings.fetchLogosMetadata = value;
+                        await this.plugin.saveSettings();
+                        this.display();
+                    })
+            );
+
+        if (this.plugin.settings.fetchLogosMetadata) {
+            const detectedPath = findCatalogDbPath() || '';
+            const currentPath = this.plugin.settings.logosDataPath || detectedPath;
+
+            new Setting(logosSectionContent)
+                .setName("Logos data folder")
+                .setDesc(currentPath ? `Detected: ${currentPath}` : 'Could not auto-detect. Please set the path to catalog.db manually.')
+                .addText((text) =>
+                    text
+                        .setPlaceholder("Auto-detected or paste path to catalog.db")
+                        .setValue(this.plugin.settings.logosDataPath)
+                        .onChange(async (value) => {
+                            this.plugin.settings.logosDataPath = value.trim();
+                            await this.plugin.saveSettings();
+                        })
+                );
+
+            new Setting(logosSectionContent)
+                .setName("Cover image subfolder")
+                .setDesc("Subfolder within the citation folder where cover images are saved")
+                .addText((text) =>
+                    text
+                        .setPlaceholder("Example: covers")
+                        .setValue(this.plugin.settings.coverImageSubfolder)
+                        .onChange(async (value) => {
+                            this.plugin.settings.coverImageSubfolder = value.trim();
+                            await this.plugin.saveSettings();
+                        })
+                );
+        }
 
         new Setting(logosSectionContent)
             .setName("Auto-detect bible verses")

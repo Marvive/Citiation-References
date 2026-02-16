@@ -4,19 +4,131 @@
     --callout-color: 31, 106, 254;
     /* #1F6AFE */
 }
+
 /* Settings Drag and Drop */
 .metadata-grab-handle {
     cursor: grab;
     color: var(--text-muted);
 }
+
 .metadata-grab-handle:active {
     cursor: grabbing;
 }
+
 .setting-item.is-being-dragged {
     opacity: 0.4;
     background-color: var(--background-secondary-alt);
     border: 1px dashed var(--interactive-accent);
 }
+
 .setting-item.drag-over {
     border-top: 2px solid var(--interactive-accent);
+}
+
+/* Library Link Modal */
+.library-link-modal {
+    padding: 16px;
+}
+
+.library-link-description {
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    font-size: 0.9em;
+}
+
+.library-link-error {
+    color: var(--text-error);
+    font-weight: 600;
+}
+
+.library-link-results {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    margin: 12px 0;
+}
+
+.library-link-result-item {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--background-modifier-border);
+    transition: background-color 0.1s;
+}
+
+.library-link-result-item:last-child {
+    border-bottom: none;
+}
+
+.library-link-result-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.library-link-result-item.is-selected {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.library-link-result-title {
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.library-link-result-author {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.library-link-result-item.is-selected .library-link-result-author {
+    color: var(--text-on-accent);
+    opacity: 0.85;
+}
+
+.library-link-no-results {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.library-link-preview {
+    margin: 12px 0;
+}
+
+.library-link-preview h4 {
+    margin: 0 0 8px 0;
+    font-size: 0.9em;
+}
+
+.library-link-preview-table {
+    width: 100%;
+    font-size: 0.85em;
+    border-collapse: collapse;
+}
+
+.library-link-preview-table td {
+    padding: 4px 8px;
+    vertical-align: top;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.library-link-preview-label {
+    font-weight: 600;
+    white-space: nowrap;
+    width: 100px;
+    color: var(--text-muted);
+}
+
+.library-link-preview-value {
+    word-break: break-word;
+}
+
+.library-link-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
 }

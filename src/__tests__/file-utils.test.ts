@@ -77,7 +77,11 @@ describe('File Utils', () => {
                 pages: '123',
                 publisher: 'Academic Press',
                 url: null,
-                rawCitation: '@book{smith2020}'
+                rawCitation: '@book{smith2020}',
+                isbn: null,
+                abstract: null,
+                keywords: null,
+                series: null,
             };
             const result = generateCitationFrontmatter(citation);
 
@@ -101,7 +105,11 @@ describe('File Utils', () => {
                 pages: null,
                 publisher: null,
                 url: null,
-                rawCitation: ''
+                rawCitation: '',
+                isbn: null,
+                abstract: null,
+                keywords: null,
+                series: null,
             };
             const result = generateCitationFrontmatter(citation);
 
@@ -122,7 +130,11 @@ describe('File Utils', () => {
                 pages: null,
                 publisher: null,
                 url: null,
-                rawCitation: ''
+                rawCitation: '',
+                isbn: null,
+                abstract: null,
+                keywords: null,
+                series: null,
             };
             const customFields = ['tags', 'related notes'];
             const result = generateCitationFrontmatter(citation, customFields);
@@ -142,11 +154,77 @@ describe('File Utils', () => {
                 pages: null,
                 publisher: null,
                 url: null,
-                rawCitation: ''
+                rawCitation: '',
+                isbn: null,
+                abstract: null,
+                keywords: null,
+                series: null,
             };
             const result = generateCitationFrontmatter(citation);
 
             expect(result).toContain('title: "Book with \\"Quoted\\" Title"');
+        });
+
+        it('should include enhanced metadata when fetchLogosMetadata is enabled', () => {
+            const citation: ParsedCitation = {
+                format: 'bibtex',
+                citeKey: 'grudem2000',
+                author: 'Wayne Grudem',
+                title: 'Systematic Theology',
+                cleanedTitle: 'Systematic Theology',
+                year: '2000',
+                pages: null,
+                publisher: 'Zondervan',
+                url: null,
+                rawCitation: '',
+                isbn: '978-0-310-28670-7',
+                abstract: 'A comprehensive introduction to systematic theology.',
+                keywords: ['theology', 'doctrine', 'biblical studies'],
+                series: 'Zondervan Academic',
+            };
+            const result = generateCitationFrontmatter(citation, [], {
+                fetchLogosMetadata: true,
+                coverImagePath: 'refs/covers/9780310286707.jpg',
+            });
+
+            expect(result).toContain('"local*cover": [[refs/covers/9780310286707.jpg]]');
+            expect(result).toContain('description: "A comprehensive introduction to systematic theology."');
+            expect(result).toContain('isbn: "978-0-310-28670-7"');
+            expect(result).toContain('tags:');
+            expect(result).toContain('  - "theology"');
+            expect(result).toContain('  - "doctrine"');
+            expect(result).toContain('  - "biblical studies"');
+            expect(result).toContain('publication-date: 2000');
+            expect(result).toContain('series: "Zondervan Academic"');
+        });
+
+        it('should add empty enhanced metadata fields when data is missing', () => {
+            const citation: ParsedCitation = {
+                format: 'bibtex',
+                citeKey: 'unknown',
+                author: null,
+                title: 'Some Book',
+                cleanedTitle: 'Some Book',
+                year: null,
+                pages: null,
+                publisher: null,
+                url: null,
+                rawCitation: '',
+                isbn: null,
+                abstract: null,
+                keywords: null,
+                series: null,
+            };
+            const result = generateCitationFrontmatter(citation, [], {
+                fetchLogosMetadata: true,
+            });
+
+            expect(result).toContain('"local*cover": ');
+            expect(result).toContain('description: ');
+            expect(result).toContain('isbn: ');
+            expect(result).toContain('tags: ');
+            expect(result).toContain('publication-date: ');
+            expect(result).toContain('series: ');
         });
     });
 

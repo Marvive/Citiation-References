@@ -10,6 +10,8 @@ import { CitationPluginSettingTab } from './settings';
 import { parseLogosClipboard, cleanFormattedText } from './utils/clipboard-parser';
 import { linkBibleVerses } from './utils/bible-linker';
 import { sanitizeNoteName, generateCitationFrontmatter, toTitleCase } from './utils/file-utils';
+import { fetchCoverImage } from './utils/cover-fetcher';
+import { LibraryLinkModal } from './ui/library-link-modal';
 
 export default class CitationReferencePlugin extends Plugin {
     settings: LogosPluginSettings;
@@ -32,6 +34,19 @@ export default class CitationReferencePlugin extends Plugin {
             name: 'List all citations',
             editorCallback: async (editor: Editor, view: MarkdownView) => {
                 await this.handleListCitations(editor, view);
+            }
+        });
+
+        this.addCommand({
+            id: 'link-note-to-logos-library',
+            name: 'Link note to logos library',
+            callback: async () => {
+                const activeFile = this.app.workspace.getActiveFile();
+                if (!activeFile) {
+                    new Notice('No active file');
+                    return;
+                }
+                new LibraryLinkModal(this.app, this.settings, activeFile).open();
             }
         });
 
@@ -203,9 +218,23 @@ export default class CitationReferencePlugin extends Plugin {
 
             const citationPrefix = '\n';
 
+            // Fetch cover image if enhanced metadata is enabled
+            let coverImagePath: string | null = null;
+            if (this.settings.fetchLogosMetadata && citation.isbn) {
+                coverImagePath = await fetchCoverImage(
+                    citation.isbn,
+                    folder,
+                    this.settings.coverImageSubfolder,
+                    this.app.vault
+                );
+            }
+
             // Generate frontmatter from citation data
             const customFields = this.settings.useCustomMetadata ? this.settings.customMetadataFields : [];
-            const metadata = generateCitationFrontmatter(citation, customFields);
+            const metadata = generateCitationFrontmatter(citation, customFields, {
+                fetchLogosMetadata: this.settings.fetchLogosMetadata,
+                coverImagePath: coverImagePath || undefined,
+            });
 
             const content = metadata + [
                 '## Citations',
@@ -214,6 +243,14 @@ export default class CitationReferencePlugin extends Plugin {
 
             await this.app.vault.create(filePath, content);
             new Notice(`Created ${filePath}`);
+
+            // Auto-open library link modal when enhanced metadata is enabled
+            if (this.settings.fetchLogosMetadata) {
+                const newFile = this.app.vault.getAbstractFileByPath(filePath);
+                if (newFile instanceof TFile) {
+                    new LibraryLinkModal(this.app, this.settings, newFile).open();
+                }
+            }
         } else {
             await this.appendCitationToFile(abstractFile, linkBack);
         }
