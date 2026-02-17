@@ -52,7 +52,7 @@ export class LibraryLinkModal extends Modal {
         });
 
         // Search input
-        const searchSetting = new Setting(contentEl)
+        new Setting(contentEl)
             .setName('Search your library')
             .addText((text) => {
                 text

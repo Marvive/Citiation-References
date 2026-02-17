@@ -33,12 +33,12 @@ export class CitationPluginSettingTab extends PluginSettingTab {
                 new FolderSuggest(this.app, text.inputEl);
                 text.setPlaceholder("Example: folder1/folder2")
                     .setValue(this.plugin.settings.citationFolder)
-                    .onChange(async (new_folder) => {
+                    .onChange((new_folder) => {
                         new_folder = new_folder.trim();
                         new_folder = new_folder.replace(/\/$/, "");
 
                         this.plugin.settings.citationFolder = new_folder;
-                        await this.plugin.saveSettings();
+                        void this.plugin.saveSettings();
                     });
                 text.inputEl.parentElement?.classList.add("citation-search");
             });
@@ -56,9 +56,9 @@ export class CitationPluginSettingTab extends PluginSettingTab {
                         chicago: "Chicago",
                     })
                     .setValue(this.plugin.settings.citationFormat)
-                    .onChange(async (value) => {
+                    .onChange((value) => {
                         this.plugin.settings.citationFormat = value as CitationFormat;
-                        await this.plugin.saveSettings();
+                        void this.plugin.saveSettings();
                     })
             );
 
@@ -69,9 +69,9 @@ export class CitationPluginSettingTab extends PluginSettingTab {
                 text
                     .setPlaceholder("Example: citation reference")
                     .setValue(this.plugin.settings.customCalloutTitle)
-                    .onChange(async (value) => {
+                    .onChange((value) => {
                         this.plugin.settings.customCalloutTitle = value;
-                        await this.plugin.saveSettings();
+                        void this.plugin.saveSettings();
                     })
             );
 
@@ -81,9 +81,9 @@ export class CitationPluginSettingTab extends PluginSettingTab {
             .addToggle((toggle) =>
                 toggle
                     .setValue(this.plugin.settings.showFullCitationInCallout)
-                    .onChange(async (value) => {
+                    .onChange((value) => {
                         this.plugin.settings.showFullCitationInCallout = value;
-                        await this.plugin.saveSettings();
+                        void this.plugin.saveSettings();
                     })
             );
 
@@ -97,10 +97,11 @@ export class CitationPluginSettingTab extends PluginSettingTab {
             .addToggle((toggle) =>
                 toggle
                     .setValue(this.plugin.settings.useCustomMetadata)
-                    .onChange(async (value) => {
+                    .onChange((value) => {
                         this.plugin.settings.useCustomMetadata = value;
-                        await this.plugin.saveSettings();
-                        this.display();
+                        void this.plugin.saveSettings().then(() => {
+                            this.display();
+                        });
                     })
             );
 
@@ -213,9 +214,9 @@ export class CitationPluginSettingTab extends PluginSettingTab {
             .addToggle((toggle) =>
                 toggle
                     .setValue(this.plugin.settings.showRibbonIcon)
-                    .onChange(async (value) => {
+                    .onChange((value) => {
                         this.plugin.settings.showRibbonIcon = value;
-                        await this.plugin.saveSettings();
+                        void this.plugin.saveSettings();
                         (this.plugin as unknown as { refreshRibbonIcon: () => void }).refreshRibbonIcon();
                     })
             );
@@ -232,9 +233,9 @@ export class CitationPluginSettingTab extends PluginSettingTab {
             .addToggle((toggle) =>
                 toggle
                     .setValue(this.plugin.settings.includeReflyLink)
-                    .onChange(async (value) => {
+                    .onChange((value) => {
                         this.plugin.settings.includeReflyLink = value;
-                        await this.plugin.saveSettings();
+                        void this.plugin.saveSettings();
                     })
             );
 
@@ -244,10 +245,11 @@ export class CitationPluginSettingTab extends PluginSettingTab {
             .addToggle((toggle) =>
                 toggle
                     .setValue(this.plugin.settings.fetchLogosMetadata)
-                    .onChange(async (value) => {
+                    .onChange((value) => {
                         this.plugin.settings.fetchLogosMetadata = value;
-                        await this.plugin.saveSettings();
-                        this.display();
+                        void this.plugin.saveSettings().then(() => {
+                            this.display();
+                        });
                     })
             );
 
@@ -262,9 +264,9 @@ export class CitationPluginSettingTab extends PluginSettingTab {
                     text
                         .setPlaceholder("Auto-detected or paste path to catalog.db")
                         .setValue(this.plugin.settings.logosDataPath)
-                        .onChange(async (value) => {
+                        .onChange((value) => {
                             this.plugin.settings.logosDataPath = value.trim();
-                            await this.plugin.saveSettings();
+                            void this.plugin.saveSettings();
                         })
                 );
 
@@ -275,9 +277,9 @@ export class CitationPluginSettingTab extends PluginSettingTab {
                     text
                         .setPlaceholder("Example: covers")
                         .setValue(this.plugin.settings.coverImageSubfolder)
-                        .onChange(async (value) => {
+                        .onChange((value) => {
                             this.plugin.settings.coverImageSubfolder = value.trim();
-                            await this.plugin.saveSettings();
+                            void this.plugin.saveSettings();
                         })
                 );
         }
@@ -288,10 +290,11 @@ export class CitationPluginSettingTab extends PluginSettingTab {
             .addToggle((toggle) =>
                 toggle
                     .setValue(this.plugin.settings.autoDetectBibleVerses)
-                    .onChange(async (value) => {
+                    .onChange((value) => {
                         this.plugin.settings.autoDetectBibleVerses = value;
-                        await this.plugin.saveSettings();
-                        this.display();
+                        void this.plugin.saveSettings().then(() => {
+                            this.display();
+                        });
                     })
             );
 
@@ -309,9 +312,9 @@ export class CitationPluginSettingTab extends PluginSettingTab {
                             nlt: "NLT",
                         })
                         .setValue(this.plugin.settings.bibleTranslation)
-                        .onChange(async (value) => {
+                        .onChange((value) => {
                             this.plugin.settings.bibleTranslation = value;
-                            await this.plugin.saveSettings();
+                            void this.plugin.saveSettings();
                         })
                 );
         }

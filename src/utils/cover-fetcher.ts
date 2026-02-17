@@ -2,7 +2,7 @@
  * Utility for fetching book cover images from Open Library
  */
 
-import { requestUrl, Vault, TFolder } from 'obsidian';
+import { requestUrl, Vault } from 'obsidian';
 
 /**
  * Fetches a cover image from Open Library Covers API using ISBN
@@ -49,7 +49,7 @@ export async function fetchCoverImage(
 
         if (!response.arrayBuffer || response.arrayBuffer.byteLength < 1000) {
             // Open Library returns a tiny 1x1 pixel image when no cover is found
-            console.log(`No cover image found for ISBN ${cleanIsbn}`);
+            console.debug(`No cover image found for ISBN ${cleanIsbn}`);
             return null;
         }
 

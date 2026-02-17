@@ -39,8 +39,8 @@ export default class CitationReferencePlugin extends Plugin {
 
         this.addCommand({
             id: 'link-note-to-logos-library',
-            name: 'Link note to logos library',
-            callback: async () => {
+            name: 'Link note to Logos library',
+            callback: () => {
                 const activeFile = this.app.workspace.getActiveFile();
                 if (!activeFile) {
                     new Notice('No active file');
@@ -384,10 +384,10 @@ export default class CitationReferencePlugin extends Plugin {
      */
     refreshRibbonIcon() {
         if (this.settings.showRibbonIcon && !this.ribbonIconEl) {
-            this.ribbonIconEl = this.addRibbonIcon('quote', 'Paste citation reference', async () => {
+            this.ribbonIconEl = this.addRibbonIcon('quote', 'Paste citation reference', () => {
                 const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
                 if (activeView) {
-                    await this.handlePasteCitationReference(activeView.editor, activeView);
+                    void this.handlePasteCitationReference(activeView.editor, activeView);
                 } else {
                     new Notice("No active editor found");
                 }

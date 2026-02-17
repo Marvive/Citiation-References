@@ -3,9 +3,9 @@
 	"name": "Citation References",
 	"version": "1.1.0",
 	"minAppVersion": "0.15.0",
-	"description": "Connect references based on APA, MLA, Chicago and BibTex citations. Additional Support for Logos Bible Software Citations.",
+	"description": "Connect references based on APA, MLA, Chicago and BibTeX citations. Additional support for Logos Bible Software citations.",
 	"author": "Michael Marvive",
 	"authorUrl": "https://github.com/Marvive",
 	"fundingUrl": "https://github.com/sponsors/Marvive",
-	"isDesktopOnly": false
+	"isDesktopOnly": true
 }
