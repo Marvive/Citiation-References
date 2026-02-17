@@ -241,7 +241,7 @@ export class CitationPluginSettingTab extends PluginSettingTab {
 
         new Setting(logosSectionContent)
             .setName("Fetch enhanced metadata")
-            .setDesc("When enabled, newly created notes will include description, ISBN, tags, publication date, series, and local cover image properties")
+            .setDesc("When enabled, newly created notes will include description, isbn, tags, publication date, series, and local cover image properties")
             .addToggle((toggle) =>
                 toggle
                     .setValue(this.plugin.settings.fetchLogosMetadata)

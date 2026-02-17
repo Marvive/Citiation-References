@@ -40,7 +40,7 @@ export class LibraryLinkModal extends Modal {
 
         if (!this.dbPath) {
             contentEl.createEl('p', {
-                text: 'Could not find the logos catalog database. Please set the path in plugin settings under "Logos data folder".',
+                text: 'Could not find the logos catalog database. Please set the path in plugin settings under "logos data folder".',
                 cls: 'library-link-error'
             });
             return;
