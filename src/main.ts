@@ -39,7 +39,7 @@ export default class CitationReferencePlugin extends Plugin {
 
         this.addCommand({
             id: 'link-note-to-logos-library',
-            name: 'Link note to Logos library',
+            name: 'Link note to logos library',
             callback: () => {
                 const activeFile = this.app.workspace.getActiveFile();
                 if (!activeFile) {

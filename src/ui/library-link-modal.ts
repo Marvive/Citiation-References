@@ -36,18 +36,18 @@ export class LibraryLinkModal extends Modal {
         contentEl.empty();
         contentEl.addClass('library-link-modal');
 
-        contentEl.createEl('h2', { text: 'Link note to Logos library' });
+        contentEl.createEl('h2', { text: 'Link note to logos library' });
 
         if (!this.dbPath) {
             contentEl.createEl('p', {
-                text: 'Could not find the Logos catalog database. Please set the path in plugin settings under "Logos data folder".',
+                text: 'Could not find the logos catalog database. Please set the path in plugin settings under "Logos data folder".',
                 cls: 'library-link-error'
             });
             return;
         }
 
         contentEl.createEl('p', {
-            text: 'Search your Logos library to find a book and populate missing metadata on this note.',
+            text: 'Search your logos library to find a book and populate missing metadata on this note.',
             cls: 'library-link-description'
         });
 
@@ -299,7 +299,7 @@ export class LibraryLinkModal extends Modal {
             new Notice(`Updated ${updatedFields.length} properties: ${updatedFields.join(', ')}`);
             this.close();
         } catch (e) {
-            console.error('Failed to link note to Logos library:', e);
+            console.error('Failed to link note to logos library:', e);
             new Notice('Failed to update note. See console for details.');
         }
     }
