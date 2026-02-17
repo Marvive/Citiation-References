@@ -79,8 +79,10 @@ export class LibraryLinkModal extends Modal {
             text: 'Apply metadata',
             cls: 'mod-cta'
         });
-        linkButton.addEventListener('click', async () => {
-            await this.handleLink();
+        linkButton.addEventListener('click', () => {
+            this.handleLink().catch(error => {
+                console.error('Error in link button handler:', error);
+            });
         });
 
         const cancelButton = buttonContainer.createEl('button', {
