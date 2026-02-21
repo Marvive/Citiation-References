@@ -191,10 +191,18 @@ export function parseMLA(text: string): ParsedCitation {
     const markdownLinkMatch = citation.match(/\[([^\]]+)\]\(([^)]+)\)/);
 
     if (markdownLinkMatch) {
-        // Logos format: Author. [_Title_](url). Publisher, Year.
-        // Remove surrounding formatting (quotes, italics, asterisks) from the link text
-        title = markdownLinkMatch[1].replace(/^[_*“"‘']+|[_*”"’',]+$/g, '').trim();
         url = markdownLinkMatch[2];
+
+        // The book title in MLA is often italicized after the article link.
+        const afterLink = citation.substring(citation.indexOf(')') + 1);
+        const bookTitleMatch = afterLink.match(/^\s*[.,]?\s*[_*]([^_*]+)[_*]/);
+
+        if (bookTitleMatch) {
+            title = bookTitleMatch[1].trim();
+        } else {
+            // Remove surrounding formatting (quotes, italics, asterisks) from the link text
+            title = markdownLinkMatch[1].replace(/^[_*“"‘']+|[_*”"’',]+$/g, '').trim();
+        }
 
         // Author is everything before the markdown link (before the title)
         const beforeLink = citation.substring(0, citation.indexOf('['));
@@ -204,7 +212,6 @@ export function parseMLA(text: string): ParsedCitation {
         author = beforeLink.replace(/\.\s*$/, '').trim();
 
         // Publisher and year are after the link
-        const afterLink = citation.substring(citation.indexOf(')') + 1);
         const pubYearMatch = afterLink.match(/([^.]+),\s*(\d{4})/);
         if (pubYearMatch) {
             publisher = pubYearMatch[1].trim();

@@ -193,7 +193,7 @@ describe('Clipboard Parser', () => {
 
             expect(result.format).toBe('mla');
             expect(result.author).toBe('Elwell, Walter A., and Barry J. Beitzel');
-            expect(result.title).toContain('Wisdom, Wisdom Literature.');
+            expect(result.title).toBe('Baker Encyclopedia of the Bible');
             expect(result.year).toBe('1988');
             expect(result.citeKey).not.toBe('unknown');
             expect(result.citeKey).toBe('elwell-1988');
