@@ -25,7 +25,7 @@ export const BIBLE_BOOKS: Record<string, string> = {
     'proverbs': 'Pr', 'prov': 'Pr', 'pr': 'Pr', 'prv': 'Pr',
     'ecclesiastes': 'Ec', 'eccl': 'Ec', 'ecc': 'Ec', 'ec': 'Ec', 'eccles': 'Ec', 'qoh': 'Ec',
     'songofsolomon': 'So', 'songofsongs': 'So', 'song': 'So', 'sos': 'So', 'so': 'So', 'ss': 'So', 'canticles': 'So', 'cant': 'So',
-    'isaiah': 'Is', 'isa': 'Is', 'is': 'Is',
+    'isaiah': 'Is', 'isa': 'Is',
     'jeremiah': 'Je', 'jer': 'Je', 'je': 'Je', 'jr': 'Je',
     'lamentations': 'La', 'lam': 'La', 'la': 'La',
     'ezekiel': 'Eze', 'ezek': 'Eze', 'eze': 'Eze', 'ez': 'Eze',

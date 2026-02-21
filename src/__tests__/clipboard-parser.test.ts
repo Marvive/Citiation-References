@@ -558,12 +558,33 @@ Third line.
             });
 
             it('should parse Chicago encyclopedia citation and use the book title, not just the article title or author', () => {
-                const text = 'Walter A. Elwell and Barry J. Beitzel, [“Wisdom, Wisdom Literature,”](https://ref.ly/logosres/bkrencbib?ref=Page.p+2152&off=2853&ctx=+the+biblical+book.%0a~Many+parallels+exist) in _Baker Encyclopedia of the Bible_ (Grand Rapids, MI: Baker Book House, 1988), 2152.';
+                const text = 'Walter A. Elwell and Barry J. Beitzel, [“Wisdom, Wisdom Literature,”](https://ref.ly/logosres/bkrencbib?ref=Page.p+2152&off=2853&ctx=+the+biblical+book.%0a~Many+parallels+exist) in _Baker Encyclopedia of the Bible_ (Oak Harbor, WA: Baker Book House, 1988), 2152.';
                 const result = parseChicago(text);
                 expect(result.title).toBe('Baker Encyclopedia of the Bible');
                 expect(result.author).toBe('Walter A. Elwell and Barry J. Beitzel');
                 expect(result.year).toBe('1988');
                 expect(result.publisher).toBe('Baker Book House');
+            });
+
+            it('should correctly extract title from a Chicago citation with trailing pages where markdown link title extraction previously failed', () => {
+                const chicago = 'John Bunyan, [_The Pilgrim’s Progress: From This World to That Which Is to Come_](https://ref.ly/logosres/pilgrim?ref=Page.p+29&off=16&ctx=ESS%0aTHE+FIRST+STAGE%0a~As+I+walked+through+) (Oak Harbor, WA: Logos Research Systems, Inc., 1995), 29.';
+                const result = parseChicago(chicago);
+
+                expect(result.format).toBe('chicago');
+                expect(result.author).toBe('John Bunyan');
+                expect(result.title).toBe('The Pilgrim’s Progress: From This World to That Which Is to Come');
+                expect(result.year).toBe('1995');
+                expect(result.citeKey).toBe('bunyan-1995');
+            });
+
+            it('should correctly extract formatting when Chicago citation is exported from Logos as plain text (no italics or links)', () => {
+                const chicago = 'John Bunyan, The Pilgrim’s Progress: From This World to That Which Is to Come (Oak Harbor, WA: Logos Research Systems, Inc., 1995), 29.';
+                const result = parseChicago(chicago);
+
+                expect(result.format).toBe('chicago');
+                expect(result.author).toBe('John Bunyan');
+                expect(result.title).toBe('The Pilgrim’s Progress: From This World to That Which Is to Come');
+                expect(result.year).toBe('1995');
             });
         });
 
@@ -592,6 +613,17 @@ Harrison, Robert D., and Elena Martinez. A Comprehensive Study of Ancient Civili
                 expect(result.citation?.author).toBe('Harrison, Robert D., and Elena Martinez. A Comprehensive Study of Ancient Civilizations: An Analytical, Historical, and Cultural Approach');
                 expect(result.citation?.year).toBe('2007');
                 expect(result.page).toBe('p. 589');
+            });
+
+            it('should split Text + Chicago Citation correctly where markdown link title extraction previously failed', () => {
+                const clipboard = `John Bunyan, [_The Pilgrim’s Progress: From This World to That Which Is to Come_](https://ref.ly/logosres/pilgrim?ref=Page.p+29&off=16&ctx=ESS%0aTHE+FIRST+STAGE%0a~As+I+walked+through+) (Oak Harbor, WA: Logos Research Systems, Inc., 1995), 29.`;
+                const result = parseLogosClipboard(clipboard, 'chicago');
+
+                expect(result.citation).not.toBeNull();
+                if (result.citation) {
+                    expect(result.citation.format).toBe('chicago');
+                    expect(result.citation.title).toBe('The Pilgrim’s Progress: From This World to That Which Is to Come');
+                }
             });
 
             it('should split Text + APA Citation correctly', () => {

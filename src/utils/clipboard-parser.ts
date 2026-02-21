@@ -451,20 +451,36 @@ export function parseChicago(text: string): ParsedCitation {
                 publisher = publisher.replace(/^[^,]*ed\.\s*/i, '').replace(/^[.,\s]+/, '').trim();
             }
         } else {
-            // Author usually ends with a period followed by a word that doesn't look like an initial
-            const authorMatch = citation.match(/^(.+?)\.(?=\s+[A-Z][A-Za-z\d]+(?!\.))/) || citation.match(/^([^.]+)\./);
-            author = authorMatch ? authorMatch[1].trim() : citation.split(/\.\s+/)[0].trim();
+            // Try to find Chicago Notes style where no markdown/italics is present
+            // Example: Author, Title (Place: Publisher, Year), page.
+            const notesStyleMatch = citation.match(/^(.*?),\s*(.*?)\s*\(([^)]+:\s*[^)]+,\s*\d{4})\)/);
+            if (notesStyleMatch) {
+                author = notesStyleMatch[1].trim();
+                title = notesStyleMatch[2].trim();
 
-            // Try to extract title - everything between author and publisher/year
-            const afterAuthor = authorMatch ? citation.substring(authorMatch[0].length).trim() : citation.substring(author.length + 1).trim();
-            title = afterAuthor.split(/\.\s+|(?=Place:)/)[0].trim();
+                // Re-extract year and publisher using their proven functions on the ending portion
+                const afterTitle = citation.substring(notesStyleMatch[1].length + notesStyleMatch[2].length);
+                const yearMatch = afterTitle.match(/,\s*(\d{4})\)/) || afterTitle.match(/,\s*(\d{4})\.?\s*$/);
+                year = yearMatch ? yearMatch[1] : null;
 
-            const yearMatch = citation.match(/,\s*(\d{4})[.,]?$/) || citation.match(/(\d{4})/);
-            year = yearMatch ? yearMatch[1] : null;
+                const publisherMatch = afterTitle.match(/:\s*([^,)]+),\s*\d{4}/);
+                if (publisherMatch) { publisher = publisherMatch[1].trim(); }
+            } else {
+                // Author usually ends with a period followed by a word that doesn't look like an initial
+                const authorMatch = citation.match(/^(.+?)\.(?=\s+[A-Z][A-Za-z\d]+(?!\.))/) || citation.match(/^([^.]+)\./);
+                author = authorMatch ? authorMatch[1].trim() : citation.split(/\.\s+/)[0].trim();
 
-            const colons = citation.split(':');
-            if (colons.length > 1) {
-                publisher = colons[colons.length - 1].replace(/,?\s*\d{4}[.,]?$/, '').trim();
+                // Try to extract title - everything between author and publisher/year
+                const afterAuthor = authorMatch ? citation.substring(authorMatch[0].length).trim() : citation.substring(author.length + 1).trim();
+                title = afterAuthor.split(/\.\s+|(?=Place:)/)[0].trim();
+
+                const yearMatch = citation.match(/,\s*(\d{4})[.,]?$/) || citation.match(/(\d{4})/);
+                year = yearMatch ? yearMatch[1] : null;
+
+                const colons = citation.split(':');
+                if (colons.length > 1) {
+                    publisher = colons[colons.length - 1].replace(/,?\s*\d{4}[.,]?$/, '').trim();
+                }
             }
         }
     }
