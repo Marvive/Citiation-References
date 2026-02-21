@@ -187,22 +187,25 @@ export function parseMLA(text: string): ParsedCitation {
     let year: string | null = null;
     let publisher: string | null = null;
 
-    // Check for Logos-style markdown link: [_Title_](url) or [*Title*](url)
-    const markdownLinkMatch = citation.match(/\[[*_]([^\]]+)[*_]\]\(([^)]+)\)/);
+    // Check for Logos-style markdown link: [_Title_](url) or ["Title"](url) or [“Title”](url)
+    const markdownLinkMatch = citation.match(/\[([^\]]+)\]\(([^)]+)\)/);
 
     if (markdownLinkMatch) {
         // Logos format: Author. [_Title_](url). Publisher, Year.
-        title = markdownLinkMatch[1].trim();
+        // Remove surrounding formatting (quotes, italics, asterisks) from the link text
+        title = markdownLinkMatch[1].replace(/^[_*“"‘']+|[_*”"’',]+$/g, '').trim();
         url = markdownLinkMatch[2];
 
-        // Author is everything before the markdown link, up to the first period or comma before the link
+        // Author is everything before the markdown link (before the title)
         const beforeLink = citation.substring(0, citation.indexOf('['));
-        const authorMatch = beforeLink.match(/^([^.]+(?:\.\s*[A-Z]\.)?)/);
-        author = authorMatch ? authorMatch[1].replace(/,?\s*$/, '').trim() : null;
+
+        // The author part precedes the title and typically ends with a period.
+        // Simply strip the trailing period/whitespace to get the full author string.
+        author = beforeLink.replace(/\.\s*$/, '').trim();
 
         // Publisher and year are after the link
         const afterLink = citation.substring(citation.indexOf(')') + 1);
-        const pubYearMatch = afterLink.match(/\.\s*([^,]+),\s*(\d{4})/);
+        const pubYearMatch = afterLink.match(/([^.]+),\s*(\d{4})/);
         if (pubYearMatch) {
             publisher = pubYearMatch[1].trim();
             year = pubYearMatch[2];

@@ -186,6 +186,18 @@ describe('Clipboard Parser', () => {
             expect(result.url).toContain('ref.ly');
             expect(result.citeKey).toBe('harrison-2018');
         });
+
+        it('should generate valid citeKey for MLA encyclopedia citation with markdown link', () => {
+            const mla = 'Elwell, Walter A., and Barry J. Beitzel. [“Wisdom, Wisdom Literature.”](https://ref.ly/logosres/bkrencbib?ref=Page.p+2152&off=2853&ctx=+the+biblical+book.%0a~Many+parallels+exist) _Baker Encyclopedia of the Bible_, vol. 2, Baker Book House, 1988, p. 2152.';
+            const result = parseMLA(mla);
+
+            expect(result.format).toBe('mla');
+            expect(result.author).toBe('Elwell, Walter A., and Barry J. Beitzel');
+            expect(result.title).toContain('Wisdom, Wisdom Literature.');
+            expect(result.year).toBe('1988');
+            expect(result.citeKey).not.toBe('unknown');
+            expect(result.citeKey).toBe('elwell-1988');
+        });
     });
 
     describe('parseAPA', () => {
