@@ -544,6 +544,15 @@ Third line.
                 expect(result.publisher).toBe('Academic Media Group');
                 expect(result.year).toBe('2015');
             });
+
+            it('should parse Chicago encyclopedia citation and use the book title, not just the article title or author', () => {
+                const text = 'Walter A. Elwell and Barry J. Beitzel, [“Wisdom, Wisdom Literature,”](https://ref.ly/logosres/bkrencbib?ref=Page.p+2152&off=2853&ctx=+the+biblical+book.%0a~Many+parallels+exist) in _Baker Encyclopedia of the Bible_ (Grand Rapids, MI: Baker Book House, 1988), 2152.';
+                const result = parseChicago(text);
+                expect(result.title).toBe('Baker Encyclopedia of the Bible');
+                expect(result.author).toBe('Walter A. Elwell and Barry J. Beitzel');
+                expect(result.year).toBe('1988');
+                expect(result.publisher).toBe('Baker Book House');
+            });
         });
 
         describe('Text + Citation Combinations', () => {

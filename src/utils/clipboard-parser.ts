@@ -381,21 +381,29 @@ export function parseChicago(text: string): ParsedCitation {
     let year: string | null = null;
     let publisher: string | null = null;
 
-    // Check for Logos-style markdown link: [_Title_](url) or [*Title*](url)
-    const markdownLinkMatch = citation.match(/\[[*_]([^\]]+)[*_]\]\(([^)]+)\)/);
+    // Check for Logos-style markdown link: [_Title_](url) or ["Title"](url) or [“Title”](url)
+    const markdownLinkMatch = citation.match(/\[([^\]]+)\]\(([^)]+)\)/);
 
     if (markdownLinkMatch) {
-        // Logos Chicago format: Author, [_Title_](url), Series (Place: Publisher, Year).
-        title = markdownLinkMatch[1].trim();
         url = markdownLinkMatch[2];
+
+        // Check if it's an article/chapter in a larger book (e.g., in _Baker Encyclopedia of the Bible_)
+        const inBookMatch = citation.match(/\bin\s+[_*]([^_*]+)[_*]/);
+        if (inBookMatch) {
+            title = inBookMatch[1].trim();
+        } else {
+            // Remove surrounding formatting (quotes, italics, asterisks) from the link text
+            title = markdownLinkMatch[1].replace(/^[_*“"‘']+|[_*”"’',]+$/g, '').trim();
+        }
 
         // Author is everything before the markdown link (before the comma or just before the bracket)
         const beforeLink = citation.substring(0, citation.indexOf('['));
         // Remove trailing comma and whitespace
         author = beforeLink.replace(/,?\s*$/, '').trim();
 
-        // Year is typically at the end: (Place: Publisher, Year) or just , Year)
-        const yearMatch = citation.match(/,\s*(\d{4})\)\.?\s*$/) || citation.match(/,\s*(\d{4})\.?\s*$/);
+        // Year is typically in parentheses: (Place: Publisher, Year) or just , Year)
+        // If there are page numbers after the parentheses, we shouldn't confuse them with the year.
+        const yearMatch = citation.match(/,\s*(\d{4})\)/) || citation.match(/,\s*(\d{4})\.?\s*$/);
         year = yearMatch ? yearMatch[1] : null;
 
         // Publisher is in parentheses: (Place: Publisher, Year) - extract "Publisher"
