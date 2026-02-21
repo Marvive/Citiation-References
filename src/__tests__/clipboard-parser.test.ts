@@ -125,14 +125,14 @@ describe('Clipboard Parser', () => {
             expect(result.cleanedTitle).toBe('Biblical Commentary Series');
         });
 
-        it('should prefer title over journal, booktitle, and series', () => {
+        it('should prefer journal, booktitle, and series over title', () => {
             const bibtex = `@article{test2023,
                 title={The Actual Title},
                 journal={Some Journal},
                 booktitle={Some Book},
                 year={2023} }`;
             const result = parseBibtex(bibtex);
-            expect(result.cleanedTitle).toBe('The Actual Title');
+            expect(result.cleanedTitle).toBe('Some Journal');
         });
 
         it('should handle Logos-style markdown link wrapping entire journal field', () => {
