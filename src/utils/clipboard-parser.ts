@@ -102,16 +102,16 @@ export function parseBibtex(bibtex: string): ParsedCitation {
     const booktitleMatch = bibtex.match(/booktitle\s*=\s*\{([^}]+)\}/i);
     const seriesMatch = bibtex.match(/series\s*=\s*\{([^}]+)\}/i);
 
-    // Determine the raw title value: journal → booktitle → series → title
+    // Determine the raw title value: journal → booktitle → title → series
     let rawTitleValue = journalMatch ? journalMatch[1]
         : booktitleMatch ? booktitleMatch[1]
-            : seriesMatch ? seriesMatch[1]
-                : titleMatch ? titleMatch[1]
+            : titleMatch ? titleMatch[1]
+                : seriesMatch ? seriesMatch[1]
                     : null;
     const titleSourceField = journalMatch ? 'journal'
         : booktitleMatch ? 'booktitle'
-            : seriesMatch ? 'series'
-                : titleMatch ? 'title'
+            : titleMatch ? 'title'
+                : seriesMatch ? 'series'
                     : null;
 
     let title = rawTitleValue;

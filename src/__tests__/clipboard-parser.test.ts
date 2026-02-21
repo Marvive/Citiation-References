@@ -125,7 +125,7 @@ describe('Clipboard Parser', () => {
             expect(result.cleanedTitle).toBe('Biblical Commentary Series');
         });
 
-        it('should prefer journal, booktitle, and series over title', () => {
+        it('should prefer journal and booktitle over title', () => {
             const bibtex = `@article{test2023,
                 title={The Actual Title},
                 journal={Some Journal},
@@ -160,6 +160,20 @@ describe('Clipboard Parser', () => {
             const result = parseBibtex(bibtex);
             expect(result.cleanedTitle).toBe('Some Dictionary Title');
             expect(result.url).toBe('https://ref.ly/test');
+        });
+
+        it('should prioritize title over series for book citations', () => {
+            const bibtex = `@book{Generic_2025,  
+address={Some City, ST},  
+series={Some Series Name},  
+title={[Generic Book Title](https://ref.ly/somebook)},  
+publisher={Generic Press},  
+author={Doe, John},  
+year={2025},  
+collection={Some Collection} }`;
+            const result = parseBibtex(bibtex);
+            expect(result.cleanedTitle).toBe('Generic Book Title');
+            expect(result.series).toBe('Some Series Name');
         });
     });
 
