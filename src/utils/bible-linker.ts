@@ -17,10 +17,11 @@ export function linkBibleVerses(text: string, version: string = 'esv'): string {
     let lastIndex = 0;
 
     // Combining regexes to process the string chronologically
-    // Pattern 1: Book Chapter:Verse
-    // Pattern 2: separator Chapter:Verse
-    // Pattern 3: separator Verse (only if Book and Chapter are already known)
-    const combinedRegex = /\b((?:[123]|I{1,3})\s*)?([A-Za-z]+)\.?\s+(\d+):(\d+)(?:\s*[-–]\s*(\d+))?\b|([;,(])\s*(\d+):(\d+)(?:\s*[-–]\s*(\d+))?\b|([,])\s*(\d+)(?:\s*[-–]\s*(\d+))?\b/g;
+    // Pattern 1: Book Chapter:Verse, e.g. "Prov. 3:21" (requires capitalization, handles numbers out front)
+    // Pattern 2: separator Chapter:Verse, e.g. "; 4:13" or " (4:22)"
+    // Pattern 3: plain Chapter:Verse without preceding separator, e.g. " 16:15," or " 16:15."
+    // Pattern 4: separator Verse (only if Book and Chapter are already known)
+    const combinedRegex = /\b((?:[123]|I{1,3})\s*)?([A-Z][a-z]+)\.?\s+(\d+):(\d+)(?:\s*[-–]\s*(\d+))?\b|([;,(])\s*(\d+):(\d+)(?:\s*[-–]\s*(\d+))?\b|(?:^|[^A-Za-z0-9])([ \t]+|)(\d+):(\d+)(?:\s*[-–]\s*(\d+))?\b|([,])\s*(\d+)(?:\s*[-–]\s*(\d+))?\b/g;
 
     let match;
     while ((match = combinedRegex.exec(text)) !== null) {
@@ -63,11 +64,35 @@ export function linkBibleVerses(text: string, version: string = 'esv'): string {
             const contentToLink = match[0].substring(separator.length).trim();
             const spacing = separator === '(' ? '' : ' ';
             finalResult += `${separator}${spacing}[${contentToLink}](https://ref.ly/${ref};${logosVersion})`;
-        } else if (match[10] && lastBookCode && lastChapter) {
-            // Sequential match (separator Verse only)
+        } else if (match[10] !== undefined && lastBookCode) {
+            // Sequential match without explicitly matching a preceding punctuation separator (bare Chapter:Verse)
+            // match[10] contains whitespace or is empty
             const separator = match[10];
-            const verse = match[11];
-            const endVerse = match[12];
+            const chapter = match[11];
+            const verse = match[12];
+            const endVerse = match[13];
+
+            lastChapter = chapter;
+            const ref = endVerse ? `${lastBookCode}${chapter}.${verse}-${endVerse}` : `${lastBookCode}${chapter}.${verse}`;
+
+            // To figure out exactly what was captured, we need to locate the matched string inside match[0]
+            // We find "chapter:verse" inside the full match string.
+            const cvString = endVerse ? `${chapter}:${verse}–${endVerse}` : `${chapter}:${verse}`;
+            const rawCvStringFallback = endVerse ? `${chapter}:${verse}-${endVerse}` : `${chapter}:${verse}`;
+
+            let matchTextIndex = match[0].indexOf(cvString);
+            if (matchTextIndex === -1) matchTextIndex = match[0].indexOf(rawCvStringFallback);
+
+            const precedingChars = match[0].substring(0, matchTextIndex);
+            const contentToLink = match[0].substring(matchTextIndex).trim();
+
+            finalResult += `${precedingChars}[${contentToLink}](https://ref.ly/${ref};${logosVersion})`;
+
+        } else if (match[14] && lastBookCode && lastChapter) {
+            // Sequential match (separator Verse only)
+            const separator = match[14];
+            const verse = match[15];
+            const endVerse = match[16];
 
             const ref = endVerse ? `${lastBookCode}${lastChapter}.${verse}-${endVerse}` : `${lastBookCode}${lastChapter}.${verse}`;
             const contentToLink = match[0].substring(separator.length).trim();

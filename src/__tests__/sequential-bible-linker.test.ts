@@ -42,4 +42,19 @@ describe('Sequential Bible Linking', () => {
         expect(result).toContain('[Ex 2:1](https://ref.ly/Ex2.1;esv)');
         expect(result).toContain('[3:1](https://ref.ly/Ex3.1;esv)');
     });
+
+    it('should maintain book context across sentence boundaries and plain text like "Apart from"', () => {
+        const text = 'Most often, however, unqualified ḥayyîm refers to “life” that is added to clinical life, apparently an abundant life of health, prosperity, and social esteem (Prov. 3:21–22; 4:13; 8:35; 16:15; 21:21; 22:4). Apart from 16:15, these passages and others hold out life as wisdom’s reward, a reward never said to be tarnished by death (4:22; 6:23; 10:17; 11:19; 12:28; 13:14; 15:31; 19:23; 22:4).';
+        const result = linkBibleVerses(text, 'esv');
+
+        // Initial sequence
+        expect(result).toContain('[Prov. 3:21–22](https://ref.ly/Pr3.21-22;esv)');
+        expect(result).toContain('[4:13](https://ref.ly/Pr4.13;esv)');
+        expect(result).toContain('[16:15](https://ref.ly/Pr16.15;esv)');
+
+        // After "Apart from"
+        expect(result).toContain('[16:15](https://ref.ly/Pr16.15;esv)');
+        expect(result).toContain('[4:22](https://ref.ly/Pr4.22;esv)');
+        expect(result).toContain('[22:4](https://ref.ly/Pr22.4;esv)');
+    });
 });
