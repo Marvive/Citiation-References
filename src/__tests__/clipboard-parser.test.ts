@@ -586,6 +586,32 @@ Third line.
                 expect(result.title).toBe('The Pilgrim’s Progress: From This World to That Which Is to Come');
                 expect(result.year).toBe('1995');
             });
+
+            it('should extract correct book title for another chicago encyclopedia format', () => {
+                const chicago = 'Walter A. Elwell and Barry J. Beitzel, [“Wisdom, Wisdom Literature,”](https://ref.ly/logosres/bkrencbib?ref=Page.p+2153&off=2292&ctx=f+OT+wisdom+remain.+~To+this+dilemma%2c+the) in _Baker Encyclopedia of the Bible_ (Grand Rapids, MI: Baker Book House, 1988), 2153.';
+                const result = parseChicago(chicago);
+
+                expect(result.format).toBe('chicago');
+                expect(result.author).toBe('Walter A. Elwell and Barry J. Beitzel');
+                expect(result.title).toBe('Baker Encyclopedia of the Bible');
+                expect(result.year).toBe('1988');
+            });
+        });
+
+        describe('detectCitationFormat', () => {
+            it('should properly detect Chicago encyclopedia representation', () => {
+                const chicago = 'Walter A. Elwell and Barry J. Beitzel, [“Wisdom, Wisdom Literature,”](https://ref.ly/logosres/bkrencbib?ref=Page.p+2153&off=2292&ctx=f+OT+wisdom+remain.+~To+this+dilemma%2c+the) in _Baker Encyclopedia of the Bible_ (Grand Rapids, MI: Baker Book House, 1988), 2153.';
+                const format = detectCitationFormat(chicago);
+                expect(format).toBe('chicago');
+            });
+        });
+
+        describe('parseLogosClipboard User Case', () => {
+            it('should not override the title of the Chicago encyclopedia representation', () => {
+                const chicago = 'Walter A. Elwell and Barry J. Beitzel, [“Wisdom, Wisdom Literature,”](https://ref.ly/logosres/bkrencbib?ref=Page.p+2153&off=2292&ctx=f+OT+wisdom+remain.+~To+this+dilemma%2c+the) in **Baker Encyclopedia of the Bible** (Grand Rapids, MI: Baker Book House, 1988), 2153.';
+                const result = parseLogosClipboard(chicago, 'chicago');
+                expect(result.citation?.title).toBe('Baker Encyclopedia of the Bible');
+            });
         });
 
         describe('Text + Citation Combinations', () => {

@@ -398,9 +398,9 @@ export function parseChicago(text: string): ParsedCitation {
         url = markdownLinkMatch[2];
 
         // Check if it's an article/chapter in a larger book (e.g., in _Baker Encyclopedia of the Bible_)
-        const inBookMatch = citation.match(/\bin\s+[_*]([^_*]+)[_*]/);
+        const inBookMatch = citation.match(/\bin\s+([_*]+)(.*?)\1/);
         if (inBookMatch) {
-            title = inBookMatch[1].trim();
+            title = inBookMatch[2].trim();
         } else {
             // Remove surrounding formatting (quotes, italics, asterisks) from the link text
             title = markdownLinkMatch[1].replace(/^[_*“"‘']+|[_*”"’',]+$/g, '').trim();
